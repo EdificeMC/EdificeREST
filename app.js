@@ -1,0 +1,28 @@
+'use strict';
+
+var koa = require('koa');
+var Router = require('koa-router');
+var logger = require('winston');
+var mongoose = require('mongoose');
+
+var app = koa({
+    name: 'Edifice'
+});
+
+app.use(require('koa-logger')());
+
+// Set up routes
+var router = new Router();
+const controllers = ['structures'];
+controllers.forEach(function(file) {
+    logger.info('Loading controller "' + file + '"...');
+    require('./' + file + '/' + file + '.controller').init(router, app);
+});
+
+// Set up MongoDB connection
+mongoose.connect('mongodb://localhost/edifice-test');
+
+// load the routes
+app.use(router.routes());
+
+app.listen(3000);
