@@ -1,0 +1,64 @@
+{
+	"id": "6c7c087e-7110-be1f-5058-8c287dcc32b1",
+	"name": "Edifice",
+	"description": "",
+	"order": [],
+	"folders": [
+		{
+			"id": "b5358fac-c8cf-d42b-2620-372319360995",
+			"name": "Structures",
+			"description": "",
+			"order": [
+				"518a05e6-9314-b5d4-7308-f90695cab361",
+				"d1e23e6f-4f9e-ee16-312d-fa4f3ef813b6"
+			],
+			"owner": 0
+		}
+	],
+	"timestamp": 1459471029224,
+	"owner": 0,
+	"remoteLink": "",
+	"public": false,
+	"requests": [
+		{
+			"id": "518a05e6-9314-b5d4-7308-f90695cab361",
+			"headers": "",
+			"url": "{{base}}/structures/56fdc346601414986a4b4e50",
+			"pathVariables": {},
+			"preRequestScript": null,
+			"method": "GET",
+			"collectionId": "6c7c087e-7110-be1f-5058-8c287dcc32b1",
+			"data": null,
+			"dataMode": "params",
+			"name": "Get Structure by ID",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1459471394764,
+			"version": 2,
+			"responses": [],
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"folder": "b5358fac-c8cf-d42b-2620-372319360995"
+		},
+		{
+			"id": "d1e23e6f-4f9e-ee16-312d-fa4f3ef813b6",
+			"headers": "Content-Type: application/json\n",
+			"url": "{{base}}/structures/",
+			"preRequestScript": null,
+			"pathVariables": {},
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1459472139188,
+			"name": "Create Structure",
+			"description": "",
+			"collectionId": "6c7c087e-7110-be1f-5058-8c287dcc32b1",
+			"responses": [],
+			"rawModeData": "{\n\t\"creatorUUID\": \"5d30e92c-5ae2-4284-a3ee-74bc15077439\",\n\t\"name\": \"TestStructure\",\n\t\"blocks\": [{\n\t\t\"BlockState\": {\n\t\t\t\"UnsafeMeta\": 0,\n\t\t\t\"BlockType\": \"minecraft:grass\",\n\t\t\t\"ContentVersion\": 1,\n\t\t\t\"Data\": [{\n\t\t\t\t\"DataClass\": \"org.spongepowered.common.data.manipulator.immutable.block.ImmutableSpongeSnowedData\",\n\t\t\t\t\"ManipulatorData\": {\n\t\t\t\t\t\"ContentVersion\": 1,\n\t\t\t\t\t\"Snowed\": false\n\t\t\t\t}\n\t\t\t}]\n\t\t},\n\t\t\"Position\": {\n\t\t\t\"X\": 0,\n\t\t\t\"Y\": 0,\n\t\t\t\"Z\": 0\n\t\t},\n\t\t\"ContentVersion\": 1\n\t}]\n}"
+		}
+	]
+}
