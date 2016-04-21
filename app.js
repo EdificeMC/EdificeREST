@@ -11,6 +11,8 @@ var app = koa({
 
 app.use(require('koa-logger')());
 
+app.use(require('koa-cors')({ methods: 'GET,PUT,POST,DELETE' }));
+
 // Set up routes
 var router = new Router();
 const controllers = ['structures'];
