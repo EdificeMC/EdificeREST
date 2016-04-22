@@ -15,7 +15,7 @@ app.use(require('koa-cors')({ methods: 'GET,PUT,POST,DELETE' }));
 
 // Set up routes
 var router = new Router();
-const controllers = ['structures'];
+const controllers = ['structures', 'playercache'];
 controllers.forEach(function(file) {
     logger.info('Loading controller "' + file + '"...');
     require('./' + file + '/' + file + '.controller').init(router, app);

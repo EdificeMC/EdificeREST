@@ -9,6 +9,8 @@
   "author": "Robert Herhold <reherhold@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.10.0",
+    "caching-map": "^1.0.2",
     "co-body": "^4.0.0",
     "koa": "^1.2.0",
     "koa-cors": "0.0.16",
