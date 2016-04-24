@@ -1,0 +1,3 @@
+[submodule "EdificeWeb"]
+	path = EdificeWeb
+	url = https://github.com/RobertHerhold/EdificeWeb
