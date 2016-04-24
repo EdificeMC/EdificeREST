@@ -9,7 +9,9 @@ var StructureSchema = new mongoose.Schema({
     length: { type: Number, required: true },
     height: { type: Number, required: true },
     blocks: { type: Array, required: true },
-    direction: { type: String, required: true}
+    direction: { type: String, required: true},
+    finalized: { type: Boolean, required: true},
+    images: { type: Array, required: false }
 });
 
 module.exports = mongoose.model('Structure', StructureSchema);

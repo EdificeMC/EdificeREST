@@ -7,6 +7,7 @@ var mongoose = require('mongoose');
 
 var app = koa({ name: 'Edifice' });
 
+app.use(require('koa-cors')({ methods: 'GET,PUT,POST,DELETE' }));
 app.use(require('koa-logger')());
 
 app.use(require('koa-static-server')({ rootDir: 'public' }));
