@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/RobertHerhold/EdificeREST.svg?branch=master)](https://travis-ci.org/RobertHerhold/EdificeREST)
+
 # EdificeREST
 REST API to provide functionality for Edifice
 
