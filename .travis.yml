@@ -3,5 +3,8 @@ language: node_js
 node_js:
   - "5.1"
 
+services:
+  - mongodb
+
 script:
   - npm test
