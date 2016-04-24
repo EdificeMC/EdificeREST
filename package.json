@@ -6,7 +6,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "test": "mocha $(find . -name *.spec.js | grep -v \"node_modules\")"
   },
   "engines": {
     "npm": ">=3.0.0",
@@ -26,5 +27,12 @@
     "koa-static-server": "0.1.8",
     "mongoose": "4.4.10",
     "winston": "2.2.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "chai-subset": "^1.2.2",
+    "co-mocha": "^1.1.2",
+    "mocha": "^2.4.5",
+    "request-promise": "^3.0.0"
   }
 }
