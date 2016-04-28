@@ -3,7 +3,7 @@
 var koa = require('koa');
 var Router = require('koa-router');
 var logger = require('winston');
-var mongoose = require('mongoose');
+var mongoose = require('./services/MongooseClient');
 
 var app = koa({ name: 'Edifice' });
 
@@ -18,9 +18,6 @@ controllers.forEach(function(file) {
     logger.info('Loading controller "' + file + '"...');
     require('./' + file + '/' + file + '.controller').init(router, app);
 });
-
-// Set up MongoDB connection
-mongoose.connect('mongodb://localhost/edifice-test');
 
 // load the routes
 app.use(router.routes());
