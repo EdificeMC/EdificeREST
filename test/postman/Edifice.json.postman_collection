@@ -1,16 +1,17 @@
 {
-	"id": "6c7c087e-7110-be1f-5058-8c287dcc32b1",
+	"id": "06fa9cc9-d55f-1751-2230-146686f3f1b5",
 	"name": "Edifice",
 	"description": "",
 	"order": [],
 	"folders": [
 		{
-			"id": "b5358fac-c8cf-d42b-2620-372319360995",
+			"id": "210ff86d-c969-8669-84c1-6b1a215aa1ba",
 			"name": "Structures",
 			"description": "",
 			"order": [
-				"518a05e6-9314-b5d4-7308-f90695cab361",
-				"d1e23e6f-4f9e-ee16-312d-fa4f3ef813b6"
+				"1b116da1-d563-fe64-53db-4cd837f6ed92",
+				"694cd79d-c13e-945d-8279-3e01d2a3dfa7",
+				"4b5a3871-813c-b612-790a-a5d57a72ae19"
 			],
 			"owner": 0
 		}
@@ -21,13 +22,13 @@
 	"public": false,
 	"requests": [
 		{
-			"id": "518a05e6-9314-b5d4-7308-f90695cab361",
+			"id": "1b116da1-d563-fe64-53db-4cd837f6ed92",
 			"headers": "",
 			"url": "{{base}}/structures/56fdc346601414986a4b4e50",
 			"pathVariables": {},
 			"preRequestScript": null,
 			"method": "GET",
-			"collectionId": "6c7c087e-7110-be1f-5058-8c287dcc32b1",
+			"collectionId": "06fa9cc9-d55f-1751-2230-146686f3f1b5",
 			"data": null,
 			"dataMode": "params",
 			"name": "Get Structure by ID",
@@ -39,10 +40,32 @@
 			"tests": null,
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"folder": "b5358fac-c8cf-d42b-2620-372319360995"
+			"folder": "210ff86d-c969-8669-84c1-6b1a215aa1ba"
 		},
 		{
-			"id": "d1e23e6f-4f9e-ee16-312d-fa4f3ef813b6",
+			"id": "4b5a3871-813c-b612-790a-a5d57a72ae19",
+			"headers": "",
+			"url": "{{base}}/structures/5727ba5789d7beff0efb30e8",
+			"pathVariables": {},
+			"preRequestScript": null,
+			"method": "PUT",
+			"collectionId": "06fa9cc9-d55f-1751-2230-146686f3f1b5",
+			"data": [],
+			"dataMode": "raw",
+			"name": "Finalize Structure",
+			"description": "",
+			"descriptionFormat": "html",
+			"time": 1462222095715,
+			"version": 2,
+			"responses": [],
+			"tests": null,
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"folder": "210ff86d-c969-8669-84c1-6b1a215aa1ba",
+			"rawModeData": "{\n\t\"name\": \"TestStructure\",\n\t\"images\": [\n\t    \"http://i.imgur.com/glMz0wD.png\"\n\t]\n}"
+		},
+		{
+			"id": "694cd79d-c13e-945d-8279-3e01d2a3dfa7",
 			"headers": "Content-Type: application/json\n",
 			"url": "{{base}}/structures/",
 			"preRequestScript": null,
@@ -53,12 +76,12 @@
 			"tests": null,
 			"currentHelper": "normal",
 			"helperAttributes": {},
-			"time": 1459472139188,
+			"time": 1462221401955,
 			"name": "Create Structure",
 			"description": "",
-			"collectionId": "6c7c087e-7110-be1f-5058-8c287dcc32b1",
+			"collectionId": "06fa9cc9-d55f-1751-2230-146686f3f1b5",
 			"responses": [],
-			"rawModeData": "{\n\t\"creatorUUID\": \"5d30e92c-5ae2-4284-a3ee-74bc15077439\",\n\t\"name\": \"TestStructure\",\n\t\"blocks\": [{\n\t\t\"BlockState\": {\n\t\t\t\"UnsafeMeta\": 0,\n\t\t\t\"BlockType\": \"minecraft:grass\",\n\t\t\t\"ContentVersion\": 1,\n\t\t\t\"Data\": [{\n\t\t\t\t\"DataClass\": \"org.spongepowered.common.data.manipulator.immutable.block.ImmutableSpongeSnowedData\",\n\t\t\t\t\"ManipulatorData\": {\n\t\t\t\t\t\"ContentVersion\": 1,\n\t\t\t\t\t\"Snowed\": false\n\t\t\t\t}\n\t\t\t}]\n\t\t},\n\t\t\"Position\": {\n\t\t\t\"X\": 0,\n\t\t\t\"Y\": 0,\n\t\t\t\"Z\": 0\n\t\t},\n\t\t\"ContentVersion\": 1\n\t}]\n}"
+			"rawModeData": "{\n\t\"creatorUUID\": \"5d30e92c-5ae2-4284-a3ee-74bc15077439\",\n\t\"name\": \"TestStructure\",\n\t\"length\": 1,\n\t\"width\": 1,\n    \"height\": 1,\n    \"direction\": \"NORTH\",\n\t\"blocks\": [{\n\t\t\"BlockState\": {\n\t\t\t\"UnsafeMeta\": 0,\n\t\t\t\"BlockType\": \"minecraft:grass\",\n\t\t\t\"ContentVersion\": 1,\n\t\t\t\"Data\": [{\n\t\t\t\t\"DataClass\": \"org.spongepowered.common.data.manipulator.immutable.block.ImmutableSpongeSnowedData\",\n\t\t\t\t\"ManipulatorData\": {\n\t\t\t\t\t\"ContentVersion\": 1,\n\t\t\t\t\t\"Snowed\": false\n\t\t\t\t}\n\t\t\t}]\n\t\t},\n\t\t\"Position\": {\n\t\t\t\"X\": 0,\n\t\t\t\"Y\": 0,\n\t\t\t\"Z\": 0\n\t\t},\n\t\t\"ContentVersion\": 1\n\t}]\n}"
 		}
 	]
 }
