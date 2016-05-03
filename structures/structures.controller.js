@@ -48,7 +48,7 @@ function* finalizeStructure() {
 function* getAllStructures() {
     var structures = yield Structure.find({
         'finalized': true
-    }, '-__v').exec();
+    }, '-blocks -__v').exec();
     this.status = 200;
     this.body = structures;
 }
