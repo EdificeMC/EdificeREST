@@ -9,7 +9,7 @@ var app = koa({ name: 'Edifice' });
 
 app.use(require('koa-logger')());
 app.use(require('koa-cors')({ methods: ['GET', 'PUT', 'POST', 'DELETE'] }));
-app.use(require('koa-static-server')({ rootDir: 'EdificeWeb' }));
+app.use(require('koa-static-server')({ rootDir: 'EdificeWeb/dist' }));
 
 // Set up routes
 var router = new Router({ prefix: '/api' });
