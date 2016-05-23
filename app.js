@@ -13,7 +13,7 @@ app.use(require('koa-static-server')({ rootDir: 'EdificeWeb/dist' }));
 
 // Set up routes
 var router = new Router({ prefix: '/api' });
-const controllers = ['structures', 'playercache', 'imgur'];
+const controllers = ['structures', 'playercache', 'imgur', 'auth'];
 controllers.forEach(function(file) {
     logger.info('Loading controller "' + file + '"...');
     require('./' + file + '/' + file + '.controller').init(router, app);
