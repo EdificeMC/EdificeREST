@@ -13,6 +13,7 @@ exports.init = function(router, app) {
 
 function* createStructure() {
     var structure = yield parse.json(this);
+    structure.creatorUUID = structure.creatorUUID.replace(/-/g, '');
     structure.finalized = false;
     structure = yield Structure.create(structure);
     this.status = 201;
@@ -46,9 +47,11 @@ function* finalizeStructure() {
 }
 
 function* getAllStructures() {
-    var structures = yield Structure.find({
+    let searchTerms = {
         'finalized': true
-    }, '-blocks -__v').exec();
+    };
+    Object.assign(searchTerms, this.query || {});
+    var structures = yield Structure.find(searchTerms, '-blocks -__v').exec();
     this.status = 200;
     this.body = structures;
 }
