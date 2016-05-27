@@ -4,13 +4,12 @@ var parse = require('co-body');
 var http = require('axios');
 
 exports.init = function(router, app) {
-    router.post('/auth', mojangAuth);
+    router.post('/auth/login', login);
+    router.post('/auth/logout', logout);
 }
 
-function* mojangAuth() {
+function* login() {
     var body = yield parse.json(this);
-    body.username = body.email;
-    delete body.email;
     body.agent = {
         name: "Minecraft",
         version: 1
@@ -18,6 +17,13 @@ function* mojangAuth() {
 
     var mojangRes = yield http.post('https://authserver.mojang.com/authenticate', body);
 
+    this.status = mojangRes.status;
+    this.body = mojangRes.data;
+}
+
+function* logout() {
+    let body = yield parse.json(this);
+    var mojangRes = yield http.post('https://authserver.mojang.com/invalidate', body);
     this.status = mojangRes.status;
     this.body = mojangRes.data;
 }
