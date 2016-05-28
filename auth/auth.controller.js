@@ -24,6 +24,7 @@ function* login() {
         }).exec();
         if (!user) {
             user = {
+                email: body.username,
                 uuid: mojangRes.data.selectedProfile.id,
                 logins: [new Date()]
             }
