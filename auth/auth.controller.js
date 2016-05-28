@@ -1,5 +1,6 @@
 'use strict';
 
+var User = require('../users/User.model');
 var parse = require('co-body');
 var http = require('axios');
 
@@ -16,6 +17,26 @@ function* login() {
     }
 
     var mojangRes = yield http.post('https://authserver.mojang.com/authenticate', body);
+
+    if (mojangRes.status === 200) {
+        let user = yield User.findOne({
+            uuid: mojangRes.data.selectedProfile.id
+        }).exec();
+        if (!user) {
+            user = {
+                uuid: mojangRes.data.selectedProfile.id,
+                logins: [new Date()]
+            }
+            user = yield User.create(user);
+        } else {
+            let update = {};
+            update.logins = user.logins;
+            update.logins.push(new Date());
+            yield User.update({
+                uuid: mojangRes.data.selectedProfile.id
+            }, update);
+        }
+    }
 
     this.status = mojangRes.status;
     this.body = mojangRes.data;

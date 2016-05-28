@@ -35,15 +35,12 @@ function* finalizeStructure() {
         }
     }
     structureUpdate.finalized = true;
-    console.log(structureUpdate);
-    try {
-        structure = yield Structure.update({'_id': this.params.id}, structureUpdate).exec();
-    } catch (e) {
-        console.error(e);
-    }
-    console.log(structure);
+    yield Structure.update({'_id': this.params.id}, structureUpdate).exec();
+    
     this.status = 200;
-    this.body = structure;
+    this.body = yield Structure.findOne({
+        '_id': this.params.id
+    }).exec();
 }
 
 function* getAllStructures() {

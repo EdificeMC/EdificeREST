@@ -11,7 +11,8 @@ var StructureSchema = new mongoose.Schema({
     blocks: { type: Array, required: true },
     direction: { type: String, required: true},
     finalized: { type: Boolean, required: true},
-    images: { type: Array, required: false }
+    images: { type: Array, required: false },
+    stargazers: { type: Array, required: false }
 });
 
 module.exports = mongoose.model('Structure', StructureSchema);
