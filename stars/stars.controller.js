@@ -41,7 +41,7 @@ function* starStructure() {
         _id: body.structureId
     }).exec();
     if (!structure) {
-        throw Boom.badData('Structure with ID ' + body.structureId + ' does not exist.');
+        throw Boom.notFound('Structure with ID ' + body.structureId + ' does not exist.');
     }
 
     // Update the user's stars
@@ -84,7 +84,7 @@ function* getStarHistory() {
         structureId
     }, '-__v').exec();
     if (!starsTS) {
-        throw Boom.badData('Star TS data for structure with ID ' + structureId + ' not found.');
+        throw Boom.notFound('Star TS data for structure with ID ' + structureId + ' not found.');
     }
     this.status = 200;
     this.body = starsTS;
