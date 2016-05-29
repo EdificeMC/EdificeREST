@@ -10,7 +10,7 @@ var http = require('axios');
 
 exports.init = function(router, app) {
     router.post('/star', starStructure);
-    router.get('/stars/:id', getStarHistory);
+    router.get('/stars-history/:id', getStarHistory);
 }
 
 function* starStructure() {
