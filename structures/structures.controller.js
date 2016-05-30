@@ -1,7 +1,6 @@
 'use strict';
 
 var Boom = require('boom');
-var parse = require('co-body');
 var Structure = require('./Structure.model');
 
 exports.init = function(router, app) {
@@ -12,7 +11,7 @@ exports.init = function(router, app) {
 }
 
 function* createStructure() {
-    var structure = yield parse.json(this);
+    var structure = this.request.body;
     structure.creatorUUID = structure.creatorUUID.replace(/-/g, '');
     structure.finalized = false;
     structure = yield Structure.create(structure);
@@ -27,7 +26,7 @@ function* finalizeStructure() {
     if(!structure) {
         throw new Boom.notFound('Structure with ID ' + this.params.id + " not found.");
     }
-    let structureUpdate = yield parse.json(this);
+    let structureUpdate = this.request.body;
     const acceptedKeys = ['name', 'images'];
     for(let key in structureUpdate) {
         if(!acceptedKeys.indexOf(key) === -1) {

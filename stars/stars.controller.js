@@ -3,9 +3,7 @@
 var User = require('../users/User.model');
 var Structure = require('../structures/Structure.model');
 var StarsTS = require('./StarsTS.model');
-var authUtils = require('../auth/auth-utils');
 var Boom = require('boom');
-var parse = require('co-body');
 var http = require('axios');
 
 exports.init = function(router, app) {
@@ -14,8 +12,6 @@ exports.init = function(router, app) {
 }
 
 function* starStructure() {
-    var body = yield parse.json(this);
-
     if (!this.header.authorization) {
         throw Boom.unauthorized();
     }
@@ -38,19 +34,19 @@ function* starStructure() {
 
     // Make sure the structure exists
     let structure = yield Structure.findOne({
-        _id: body.structureId
+        _id: this.request.body.structureId
     }).exec();
     if (!structure) {
-        throw Boom.notFound('Structure with ID ' + body.structureId + ' does not exist.');
+        throw Boom.notFound('Structure with ID ' + this.request.body.structureId + ' does not exist.');
     }
 
     // Update the user's stars
     let userUpdate = {
         stars: user.stars
     };
-    let structureIdIndex = userUpdate.stars.indexOf(body.structureId);
+    let structureIdIndex = userUpdate.stars.indexOf(this.request.body.structureId);
     if (structureIdIndex === -1) {
-        userUpdate.stars.push(body.structureId);
+        userUpdate.stars.push(this.request.body.structureId);
     } else {
         userUpdate.stars.splice(structureIdIndex, 1);
     }

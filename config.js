@@ -1,5 +1,5 @@
 'use strict';
 
 module.exports = {
-    imgurClientId: 'your-client-id'
+    imgurClientId: '4bbbba7d2469cca'
 };
