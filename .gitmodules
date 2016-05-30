@@ -1,3 +1,6 @@
 [submodule "EdificeWeb"]
 	path = EdificeWeb
 	url = https://github.com/RobertHerhold/EdificeWeb
+[submodule "EdificeAuth"]
+	path = EdificeAuth
+	url = git@github.com:EdificeMC/EdificeAuth.git
