@@ -1,13 +1,13 @@
 'use strict';
 
-var koa = require('koa');
-var bodyparser = require('koa-bodyparser');
-var mount = require('koa-mount');
-var Router = require('koa-router');
-var logger = require('winston');
-var mongoose = require('./services/MongooseClient');
+let koa = require('koa');
+let bodyparser = require('koa-bodyparser');
+let mount = require('koa-mount');
+let Router = require('koa-router');
+let logger = require('winston');
+require('./services/MongooseClient');
 
-var app = koa({ name: 'Edifice' });
+let app = koa({ name: 'Edifice' });
 
 app.use(require('koa-logger')());
 app.use(require('koa-cors')({ methods: ['GET', 'PUT', 'POST', 'DELETE'] }));
@@ -16,7 +16,7 @@ app.use(require('./middleware/boom'));
 app.use(bodyparser());
 
 // Set up routes
-var router = new Router({ prefix: '/api' });
+let router = new Router({ prefix: '/api' });
 const controllers = ['structures', 'stars', 'playercache', 'imgur'];
 controllers.forEach(function(file) {
     logger.info('Loading controller "' + file + '"...');
@@ -28,7 +28,7 @@ app.use(router.routes());
 
 // Mount the auth server
 logger.info('Mounting the authentication app');
-app.use(mount('/api/auth', require('../EdificeAuth')));
+app.use(mount('/api/auth', require('./EdificeAuth')));
 
 app.listen(3000);
 
