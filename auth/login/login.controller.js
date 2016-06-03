@@ -13,10 +13,10 @@ exports.init = function(router, app) {
 
 function* login(next) {
     let inputValidation = Joi.validate(this.request.body, loginSchema.input);
-    if(inputValidation.error) {
+    if (inputValidation.error) {
         throw Boom.badRequest(inputValidation.error)
     }
-    
+
     let user = yield User.findOne({
         email: this.request.body.email
     }).exec();
@@ -24,16 +24,25 @@ function* login(next) {
         throw Boom.notFound(`User with email ${this.request.body.email} does not exist.`)
     }
     let passMatches = yield util.compare(this.request.body.password, user.password);
-    
-    if(!passMatches) {
+
+    if (!passMatches) {
         throw Boom.unauthorized('Authentication failed');
     }
-    
+
+    let logins = user.logins;
+    logins.push(new Date());
+    let res = yield User.update({
+        email: this.request.body.email
+    }, {
+        logins
+    });
+
     this.status = 200;
     this.body = {
         profile: {
             uuid: user.uuid,
-            joined: user.joined
+            joined: user.joined,
+            logins: user.logins
         },
         accessToken: yield util.generateAccessToken(user)
     };

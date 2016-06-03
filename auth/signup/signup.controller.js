@@ -38,14 +38,16 @@ function* signup(next) {
         email: this.request.body.email,
         password: this.request.body.password,
         uuid: verificationCode.playerId,
-        joined: new Date()
+        joined: new Date(),
+        logins: [new Date()]
     });
     
     this.status = 201;
     this.body = {
         profile: {
             uuid: newUser.uuid,
-            joined: newUser.joined
+            joined: newUser.joined,
+            logins: newUser.logins
         },
         accessToken: yield util.generateAccessToken(newUser)
     };

@@ -8,7 +8,7 @@ let UserSchema = new mongoose.Schema({
     uuid: { type: String, required: true },
     joined: { type: Date, required: true },
     stars: { type: Array, required: false },
-    logins: { type: Array, required: false }
+    logins: { type: Array, required: true }
 });
 
 module.exports = mongoose.model('User', UserSchema);
