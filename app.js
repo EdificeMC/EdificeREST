@@ -17,18 +17,14 @@ app.use(bodyparser());
 
 // Set up routes
 let router = new Router({ prefix: '/api' });
-const controllers = ['structures', 'stars', 'playercache', 'imgur'];
+const controllers = ['structures/structures', 'stars/stars', 'playercache/playercache', 'imgur/imgur', 'auth/signup/signup', 'auth/verificationcode/verificationcode', 'auth/login/login'];
 controllers.forEach(function(file) {
     logger.info('Loading controller "' + file + '"...');
-    require('./' + file + '/' + file + '.controller').init(router, app);
+    require('./' + file + '.controller').init(router, app);
 });
 
 // load the routes
 app.use(router.routes());
-
-// Mount the auth server
-logger.info('Mounting the authentication app');
-app.use(mount('/api/auth', require('./EdificeAuth')));
 
 app.listen(3000);
 
