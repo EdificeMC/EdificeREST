@@ -1,2 +1,5 @@
 # Dependency directory
 node_modules
+
+# Edifice config file containing secret tokens and such
+config.json

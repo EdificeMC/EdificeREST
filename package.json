@@ -5,6 +5,7 @@
   "description": "REST API for Edifice",
   "main": "app.js",
   "scripts": {
+    "init": "cp -u config-sample.json config.json",
     "start": "node app.js",
     "dev": "nodemon app.js",
     "test": "mocha test"
@@ -31,6 +32,7 @@
     "koa-router": "5.4.0",
     "koa-static-server": "0.1.8",
     "mongoose": "4.4.10",
+    "request-promise": "^3.0.0",
     "winston": "2.2.0"
   },
   "devDependencies": {

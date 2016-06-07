@@ -1,5 +1,5 @@
 {
     "imgurClientId": "client-id",
     "edificeMCAuth": "token",
-    "jwtSecret": "secret"
+    "auth0Token": "token"
 }
