@@ -2,7 +2,6 @@
 
 let koa = require('koa');
 let bodyparser = require('koa-bodyparser');
-let mount = require('koa-mount');
 let Router = require('koa-router');
 let logger = require('winston');
 require('./services/MongooseClient');

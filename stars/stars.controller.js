@@ -2,8 +2,18 @@
 
 var Structure = require('../structures/Structure.model');
 var StarsTS = require('./StarsTS.model');
+let config = require('../config.json');
 var Boom = require('boom');
+let helpers = require('../helpers');
+let _ = require('lodash');
 let rp = require('request-promise');
+
+rp = rp.defaults({
+    headers: {
+        'Authorization': `Bearer ${config.auth0Token}`
+    },
+    json: true
+});
 
 exports.init = function(router, app) {
     router.post('/star', starStructure);
@@ -11,25 +21,7 @@ exports.init = function(router, app) {
 }
 
 function* starStructure() {
-    if (!this.header.authorization) {
-        throw Boom.unauthorized();
-    }
-
-    // Getting the player's email from the access token serves two purposes:
-    // * Validates the token
-    // * Associates the bearer of the token with an Edifice user
-    let playerEmail = yield authUtils.getEmailFromToken(this.header.authorization);
-    if (!playerEmail) {
-        throw Boom.unauthorized();
-    }
-    let user = yield User.findOne({
-        email: playerEmail
-    }).exec();
-
-    if (!user) {
-        // If this user has never logged in before, return not authorized
-        throw Boom.unauthorized();
-    }
+    let user = yield helpers.validateUser(this.header.authorization);
 
     // Make sure the structure exists
     let structure = yield Structure.findOne({
@@ -39,27 +31,34 @@ function* starStructure() {
         throw Boom.notFound('Structure with ID ' + this.request.body.structureId + ' does not exist.');
     }
 
-    // Update the user's stars
-    let userUpdate = {
-        stars: user.stars
-    };
-    let structureIdIndex = userUpdate.stars.indexOf(this.request.body.structureId);
+    let stars = _.get(user, 'user_metadata.stars', []);
+    let structureIdIndex = stars.indexOf(this.request.body.structureId);
     if (structureIdIndex === -1) {
-        userUpdate.stars.push(this.request.body.structureId);
+        stars.push(this.request.body.structureId);
     } else {
-        userUpdate.stars.splice(structureIdIndex, 1);
+        stars.splice(structureIdIndex, 1);
     }
-    yield User.update({
-        email: playerEmail
-    }, userUpdate);
+
+    // Update the user metadata on Auth0
+    yield rp({
+        method: 'PATCH',
+        uri: `https://edifice.auth0.com/api/v2/users/${user.user_id}`,
+        body: {
+            user_metadata: {
+                stars
+            }
+        }
+    }).catch(function(err) {
+        throw Boom.wrap(err);
+    })
 
     // Update the structure's stargazers
     let structureUpdate = {
         stargazers: structure.stargazers
     };
-    let playerIdIndex = structureUpdate.stargazers.indexOf(user.uuid);
+    let playerIdIndex = structureUpdate.stargazers.indexOf(user.app_metadata.mcuuid);
     if (playerIdIndex === -1) {
-        structureUpdate.stargazers.push(user.uuid);
+        structureUpdate.stargazers.push(user.app_metadata.mcuuid);
     } else {
         structureUpdate.stargazers.splice(playerIdIndex, 1);
     }
@@ -85,34 +84,31 @@ function* getStarHistory() {
     this.body = starsTS;
 }
 
-function updateTimeSeries(structureId, numStargazers) {
-    return StarsTS.findOne({
+function* updateTimeSeries(structureId, numStargazers) {
+    let starsTS = yield StarsTS.findOne({
+        structureId
+    }).exec();
+    let now = new Date();
+    let year = now.getFullYear() + '';
+    let month = now.getMonth() + '';
+    let date = now.getDate() + '';
+    if (starsTS) {
+        let update = {
+            $set: {}
+        };
+        update.$set['values.' + year + '.' + month + '.' + date] = numStargazers;
+        yield StarsTS.update({
             structureId
-        }).exec()
-        .then(starsTS => {
-            let now = new Date();
-            let year = now.getFullYear() + '';
-            let month = now.getMonth() + '';
-            let date = now.getDate() + '';
-            if (starsTS) {
-                let update = {
-                    $set: {}
-                };
-                update.$set['values.' + year + '.' + month + '.' + date] = numStargazers;
-                return StarsTS.update({
-                    structureId
-                }, update);
-            } else {
-                let newDoc = {
-                    structureId,
-                    values: {}
-                };
-                newDoc.values[year] = {};
-                newDoc.values[year][month] = {};
-                newDoc.values[year][month][date] = numStargazers;
+        }, update);
+    } else {
+        let newDoc = {
+            structureId,
+            values: {}
+        };
+        newDoc.values[year] = {};
+        newDoc.values[year][month] = {};
+        newDoc.values[year][month][date] = numStargazers;
 
-                return StarsTS.create(newDoc);
-            }
-        });
-
+        yield StarsTS.create(newDoc);
+    }
 }
