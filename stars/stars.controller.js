@@ -1,10 +1,9 @@
 'use strict';
 
-var User = require('../users/User.model');
 var Structure = require('../structures/Structure.model');
 var StarsTS = require('./StarsTS.model');
 var Boom = require('boom');
-var http = require('axios');
+let rp = require('request-promise');
 
 exports.init = function(router, app) {
     router.post('/star', starStructure);

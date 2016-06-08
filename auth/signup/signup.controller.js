@@ -2,10 +2,19 @@
 
 let Boom = require('boom');
 let Joi = require('joi');
+let rp = require('request-promise');
+let config = require('../../config.json');
 let signupSchema = require('./signup.schema');
-let util = require('../util');
-let User = require('../../users/User.model');
 let VerificationCode = require('../verificationcode/VerificationCode.model');
+
+let auth0rp = rp.defaults({
+    headers: {
+        'Authorization': `Bearer ${config.auth0Token}`
+    },
+    simple: false,
+    resolveWithFullResponse: true,
+    json: true
+});
 
 exports.init = function(router, app) {
     router.post('/auth/signup', signup);
@@ -23,32 +32,28 @@ function* signup(next) {
     if(!verificationCode || verificationCode.isExpired()) {
         throw Boom.badRequest('Invalid verification code.');
     }
-    // Check for an existing user w/ that email
-    let existingUser = yield User.findOne({
-        email: this.request.body.email
+    
+    let response = yield auth0rp({
+        method: 'POST',
+        uri: 'https://edifice.auth0.com/api/v2/users',
+        body: {
+            connection: 'Username-Password-Authentication',
+            email: this.request.body.email,
+            password: this.request.body.password,
+            app_metadata: {
+                mcuuid: verificationCode.playerId
+            },
+            picture: `https://crafatar.com/avatars/${verificationCode.playerId}`,
+            email_verified: false
+        }
     });
-    if(existingUser) {
-        throw Boom.conflict(`User with email ${this.request.body.email} already exists.`);
+    
+    if(response.statusCode !== 201) {
+        throw Boom.create(response.statusCode, response.body.message);
     }
     
     VerificationCode.remove(verificationCode).exec();
     
-    this.request.body.password = yield util.hashPassword(this.request.body.password);
-    let newUser = yield User.create({
-        email: this.request.body.email,
-        password: this.request.body.password,
-        uuid: verificationCode.playerId,
-        joined: new Date(),
-        logins: [new Date()]
-    });
-    
     this.status = 201;
-    this.body = {
-        profile: {
-            uuid: newUser.uuid,
-            joined: newUser.joined,
-            logins: newUser.logins
-        },
-        accessToken: yield util.generateAccessToken(newUser)
-    };
+    this.body = {};
 }

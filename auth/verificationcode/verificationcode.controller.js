@@ -2,10 +2,19 @@
 
 let VerificationCode = require('./VerificationCode.model');
 let verificationCodeSchema = require('./verificationcode.schema');
-let User = require('../../users/User.model');
+let rp = require('request-promise');
 let config = require('../../config.json');
 let Boom = require('boom');
 let Joi = require('joi');
+
+let auth0rp = rp.defaults({
+    headers: {
+        'Authorization': `Bearer ${config.auth0Token}`
+    },
+    simple: false,
+    resolveWithFullResponse: true,
+    json: true
+});
 
 exports.init = function(router, app) {
     router.post('/auth/verificationcode', grantVerificationCode);
@@ -22,13 +31,14 @@ function* grantVerificationCode(next) {
     if(!this.header.authorization || !matchesSecretKey(this.header.authorization)) {
         throw Boom.unauthorized();
     }
-
-    // Check if the player is already signed up.
-    let existingUser = yield User.findOne({
-        uuid: this.request.body.playerId
+    
+    let existingUsersRes = yield auth0rp({
+        uri: `https://edifice.auth0.com/api/v2/users?q=mcuuid%3D${this.request.body.playerId}&search_engine=v2`        
     });
-    if(existingUser) {
-        throw Boom.conflict(`User with UUID ${this.request.body.playerId} has already signed up.`)
+    
+    let existingUsers = existingUsersRes.body;
+    if(existingUsers.length > 0) {
+        throw Boom.badRequest(`User with UUID ${this.request.body.playerId} has already signed up.`)
     }
     
     // Generate a new code if an existing one in the DB doesn't exist or is expired
