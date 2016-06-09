@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 var logger = require('winston');
 
-mongoose.connect('mongodb://localhost/edifice-test');
+mongoose.connect('mongodb://localhost/edifice');
 
 // CONNECTION EVENTS
 mongoose.connection.on('connected', function() {
