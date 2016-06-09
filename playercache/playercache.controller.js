@@ -34,12 +34,14 @@ function* getPlayerProfileByUUID() {
         let responses = yield Promise.all([mojangProm, auth0Prom]);
         let mojangRes = responses[0];
         let auth0Res = responses[1];
-        if(mojangRes.statusCode !== 200 || auth0Res.statusCode !== 200 || auth0Res.body.length === 0) {
+        if(mojangRes.statusCode !== 200) {
             throw Boom.notFound(`User with UUID ${uuid} not found.`);
         }
         
         let body = mojangRes.body;
-        body.joined = auth0Res.body[0].created_at;
+        if(auth0Res.statusCode === 200) {
+            body.joined = auth0Res.body[0].created_at;
+        }
         
         playerCache.set(uuid, body);
     }
