@@ -39,7 +39,7 @@ function* getPlayerProfileByUUID() {
         }
         
         let body = mojangRes.body;
-        if(auth0Res.statusCode === 200) {
+        if(auth0Res.statusCode === 200 && auth0Res.body.length > 0) {
             body.joined = auth0Res.body[0].created_at;
         }
         
