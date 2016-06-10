@@ -27,9 +27,9 @@ exports.init = function(router, app) {
 }
 
 function* getPlayerProfileByUUID() {
-    const uuid = this.params.uuid.replace(/-/g, ''); // Get rid of all dashes
+    const uuid = this.params.uuid;
     if(!playerCache.has(uuid)) {
-        let mojangProm = rp('https://sessionserver.mojang.com/session/minecraft/profile/' + uuid);
+        let mojangProm = rp('https://sessionserver.mojang.com/session/minecraft/profile/' + uuid.replace(/-/g, ''));
         let auth0Prom = auth0rp(`https://edifice.auth0.com/api/v2/users?q=mcuuid%3D${uuid}&search_engine=v2`);
         let responses = yield Promise.all([mojangProm, auth0Prom]);
         let mojangRes = responses[0];

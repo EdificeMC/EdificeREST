@@ -12,7 +12,6 @@ exports.init = function(router, app) {
 
 function* createStructure() {
     var structure = this.request.body;
-    structure.creatorUUID = structure.creatorUUID.replace(/-/g, '');
     structure.finalized = false;
     structure = yield Structure.create(structure);
     this.status = 201;
