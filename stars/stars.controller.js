@@ -1,7 +1,7 @@
 'use strict';
 
-var Structure = require('../structures/Structure.model');
-var StarsTS = require('./StarsTS.model');
+let Structure = require('../structures/Structure.model');
+let stats = require('../stats/stats.controller');
 let config = require('../config.json');
 var Boom = require('boom');
 let helpers = require('../helpers');
@@ -66,49 +66,8 @@ function* starStructure() {
         _id: structure._id
     }, structureUpdate);
 
-    yield updateTimeSeries(structure._id, structureUpdate.stargazers.length);
+    yield stats.updateStars(structure._id, structureUpdate.stargazers.length);
 
     this.body = null;
     this.status = 200;
-}
-
-function* getStarHistory() {
-    let structureId = this.params.id;
-    let starsTS = yield StarsTS.findOne({
-        structureId
-    }, '-__v').exec();
-    if (!starsTS) {
-        throw Boom.notFound('Star TS data for structure with ID ' + structureId + ' not found.');
-    }
-    this.status = 200;
-    this.body = starsTS;
-}
-
-function* updateTimeSeries(structureId, numStargazers) {
-    let starsTS = yield StarsTS.findOne({
-        structureId
-    }).exec();
-    let now = new Date();
-    let year = now.getFullYear() + '';
-    let month = now.getMonth() + '';
-    let date = now.getDate() + '';
-    if (starsTS) {
-        let update = {
-            $set: {}
-        };
-        update.$set['values.' + year + '.' + month + '.' + date] = numStargazers;
-        yield StarsTS.update({
-            structureId
-        }, update);
-    } else {
-        let newDoc = {
-            structureId,
-            values: {}
-        };
-        newDoc.values[year] = {};
-        newDoc.values[year][month] = {};
-        newDoc.values[year][month][date] = numStargazers;
-
-        yield StarsTS.create(newDoc);
-    }
 }
