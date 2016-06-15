@@ -1,6 +1,7 @@
 'use strict';
 
 var StatsTS = require('./StatsTS.model');
+var Structure = require('../structures/Structure.model');
 var Boom = require('boom');
 var _ = require('lodash');
 
@@ -24,8 +25,21 @@ exports.updateStars = function* (structureId, numStargazers) {
     return yield updateTSValue(structureId, 'stars', '$set', numStargazers);
 }
 
-exports.incrementViews = function* (structureId) {
-    yield updateTSValue(structure, 'views', '$inc', 1);
+exports.incrementViews = function* (structure, requestAgent) {
+    yield updateTSValue(structure._id, 'views', '$inc', 1);
+    
+    // Record the agent (website, server plugin, etc.) used to make the request
+    let update = {};
+    if(structure.requests) {
+        update['$inc'] = {};
+        update['$inc']['requests.' + requestAgent] = 1;
+    } else {
+        _.set(update, 'requests.' + requestAgent, 1);
+    }
+    
+    yield Structure.update({
+        '_id': structure._id
+    }, update);
 }
 
 function* updateTSValue(structureId, key, operation, value) {
@@ -50,7 +64,8 @@ function* updateTSValue(structureId, key, operation, value) {
         let newDoc = {
             structureId
         };
-        _.set(newDoc, path, value);
+        // Use Object w/ setWith to make sure the parts of the path (which are numbers) turn into object keys rather than array indices
+        _.setWith(newDoc, path, value, Object);
 
         yield StatsTS.create(newDoc);
     }

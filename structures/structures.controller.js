@@ -2,6 +2,7 @@
 
 var Boom = require('boom');
 var Structure = require('./Structure.model');
+var stats = require('../stats/stats.controller');
 
 exports.init = function(router, app) {
     router.post('/structures', createStructure);
@@ -58,6 +59,12 @@ function* getStructure() {
     if(!structure) {
         throw new Boom.notFound('Structure with ID ' + this.params.id + " not found.");
     }
+    
+    // Keep track of this request as a metric in the DB
+    if(this.query.agent) {
+        yield stats.incrementViews(structure, this.query.agent);
+    }
+    
     this.status = 200;
     this.body = structure;
 }

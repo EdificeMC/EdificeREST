@@ -17,7 +17,6 @@ rp = rp.defaults({
 
 exports.init = function(router, app) {
     router.post('/star', starStructure);
-    router.get('/stars-history/:id', getStarHistory);
 }
 
 function* starStructure() {
