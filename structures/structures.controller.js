@@ -27,7 +27,8 @@ function* finalizeStructure() {
         throw new Boom.notFound('Structure with ID ' + this.params.id + " not found.");
     }
     let structureUpdate = this.request.body;
-    const acceptedKeys = ['name', 'images'];
+    // TODO Do some better validation than this
+    const acceptedKeys = ['name', 'screenshot'];
     for(let key in structureUpdate) {
         if(!acceptedKeys.indexOf(key) === -1) {
             delete acceptedKeys[key];

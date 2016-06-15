@@ -11,7 +11,7 @@ var StructureSchema = new mongoose.Schema({
     blocks: { type: Array, required: true },
     direction: { type: String, required: true},
     finalized: { type: Boolean, required: true},
-    images: { type: Array, required: false },
+    screenshot: { type: Object, required: false },
     stargazers: { type: Array, required: false },
     requests: { type: Object, required: false }
 });
