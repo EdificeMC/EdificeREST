@@ -3,6 +3,23 @@
 var Boom = require('boom');
 var Structure = require('./Structure.model');
 var stats = require('../stats/stats.controller');
+let NodeCache = require('node-cache');
+
+// Cache of IP addresses mapped to an array of structure IDs that they have done a GET request for in the past 24 hours
+// This is used to make sure people don't inflate the number of views that are counted by refreshing the page/doing
+// another request
+
+// Each pair of IP + structure ID has to expire in 24 hours, not all of the structure IDs for a certain IP
+
+// The cache structure is like so:
+// {
+//     '192.168.0.1': {
+//         'structureId': true
+//     }
+// }
+let ipCache = new NodeCache({
+    useClones: false
+});
 
 exports.init = function(router, app) {
     router.post('/structures', createStructure);
@@ -62,8 +79,26 @@ function* getStructure() {
     }
     
     // Keep track of this request as a metric in the DB
-    if(this.query.agent) {
-        yield stats.incrementViews(structure, this.query.agent);
+    const agent = this.query.agent;
+    if(agent) {
+        if(agent === 'EdificeWeb') {
+            // Check the IP of the request sender so we don't count multiple views from the same IP in the same 24hr period
+            let structureIdCache = ipCache.get(this.ip);
+            if(structureIdCache) {
+                if(!structureIdCache.get(this.params.id)) {
+                    // The user has not yet gotten this structure in the last 24 hours
+                    yield stats.incrementViews(structure, this.query.agent);
+                    structureIdCache.set(this.params.id, true);
+                }
+            } else {
+                yield stats.incrementViews(structure, this.query.agent);
+                let newstructureIdCache = new NodeCache({
+                    stdTTL: 86400 // 1 day = 86400 seconds
+                });
+                newstructureIdCache.set(this.params.id, true);
+                ipCache.set(this.ip, newstructureIdCache);
+            }
+        }
     }
     
     this.status = 200;

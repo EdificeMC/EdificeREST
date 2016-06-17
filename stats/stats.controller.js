@@ -26,7 +26,8 @@ exports.updateStars = function* (structureId, numStargazers) {
 }
 
 exports.incrementViews = function* (structure, requestAgent) {
-    yield updateTSValue(structure._id, 'views', '$inc', 1);
+    let key = requestAgent === 'EdificeWeb' ? 'views' : 'downloads';
+    yield updateTSValue(structure._id, key, '$inc', 1);
     
     // Record the agent (website, server plugin, etc.) used to make the request
     let update = {};

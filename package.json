@@ -30,6 +30,7 @@
     "lodash": "^4.13.1",
     "lru-cache": "^4.0.1",
     "mongoose": "4.4.10",
+    "node-cache": "^3.2.1",
     "request-promise": "^3.0.0",
     "winston": "2.2.0"
   },
