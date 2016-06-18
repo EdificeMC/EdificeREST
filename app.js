@@ -4,6 +4,8 @@ let koa = require('koa');
 let bodyparser = require('koa-bodyparser');
 let Router = require('koa-router');
 let logger = require('winston');
+let config = require('./config.json');
+let https = require('https');
 require('./services/MongooseClient');
 
 let app = koa({ name: 'Edifice' });
@@ -24,6 +26,6 @@ controllers.forEach(function(file) {
 // load the routes
 app.use(router.routes());
 
-app.listen(3000);
+https.createServer(app.callback()).listen(config.apiPort);
 
 module.exports = app;
