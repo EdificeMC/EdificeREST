@@ -2,7 +2,7 @@
 
 let Structure = require('../structures/Structure.model');
 let stats = require('../stats/stats.controller');
-let config = require('../config.json');
+let config = require('config');
 var Boom = require('boom');
 let helpers = require('../helpers');
 let _ = require('lodash');
@@ -10,7 +10,7 @@ let rp = require('request-promise');
 
 rp = rp.defaults({
     headers: {
-        'Authorization': `Bearer ${config.auth0Token}`
+        'Authorization': `Bearer ${config.get('auth0Token')}`
     },
     json: true
 });

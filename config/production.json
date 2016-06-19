@@ -1,5 +1,5 @@
 {
-    "apiPort": 443,
+    "API_PORT": 443,
     "CERT_PATH": "/etc/letsencrypt/live/api.edificemc.com/cert.pem",
     "KEY_PATH": "/etc/letsencrypt/live/api.edificemc.com/privkey.pem"
 }

@@ -2,6 +2,3 @@
 node_modules
 
 npm-debug.log
-
-# Edifice config file containing secret tokens and such
-config.json

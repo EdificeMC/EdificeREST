@@ -27,7 +27,7 @@ controllers.forEach(function(file) {
 // load the routes
 app.use(router.routes());
 
-const port = config.get('apiPort');
+const port = config.get('API_PORT');
 if(process.env.NODE_ENV === 'production') {
     const options = {
         key: fs.readFileSync(config.get('KEY_PATH')),

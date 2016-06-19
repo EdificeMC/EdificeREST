@@ -5,9 +5,8 @@
   "description": "REST API for Edifice",
   "main": "app.js",
   "scripts": {
-    "init": "cp -u config-sample.json config.json",
-    "dev": "NODE_ENV=development nodemon app.js",
-    "prod": "NODE_ENV=production node app.js",
+    "dev": "env NODE_ENV=development nodemon app.js",
+    "prod": "env NODE_ENV=production node app.js",
     "test": "mocha test"
   },
   "engines": {

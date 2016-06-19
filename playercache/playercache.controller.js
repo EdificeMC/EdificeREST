@@ -1,12 +1,12 @@
 'use strict';
 
 let request = require('request-promise');
-let config = require('../config.json');
+let config = require('config');
 let Boom = require('boom');
 
 let auth0rp = request.defaults({
     headers: {
-        'Authorization': `Bearer ${config.auth0Token}`
+        'Authorization': `Bearer ${config.get('auth0Token')}`
     },
     simple: false,
     resolveWithFullResponse: true,
@@ -37,12 +37,12 @@ function* getPlayerProfileByUUID() {
         if(mojangRes.statusCode !== 200) {
             throw Boom.notFound(`User with UUID ${uuid} not found.`);
         }
-        
+
         let body = mojangRes.body;
         if(auth0Res.statusCode === 200 && auth0Res.body.length > 0) {
             body.joined = auth0Res.body[0].created_at;
         }
-        
+
         playerCache.set(uuid, body);
     }
 

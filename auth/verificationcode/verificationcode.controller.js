@@ -3,13 +3,13 @@
 let VerificationCode = require('./VerificationCode.model');
 let verificationCodeSchema = require('./verificationcode.schema');
 let rp = require('request-promise');
-let config = require('../../config.json');
+let config = require('config');
 let Boom = require('boom');
 let Joi = require('joi');
 
 let auth0rp = rp.defaults({
     headers: {
-        'Authorization': `Bearer ${config.auth0Token}`
+        'Authorization': `Bearer ${config.get('auth0Token')}`
     },
     simple: false,
     resolveWithFullResponse: true,
@@ -31,16 +31,16 @@ function* grantVerificationCode(next) {
     if(!this.header.authorization || !matchesSecretKey(this.header.authorization)) {
         throw Boom.unauthorized();
     }
-    
+
     let existingUsersRes = yield auth0rp({
-        uri: `https://edifice.auth0.com/api/v2/users?q=mcuuid%3D${this.request.body.playerId}&search_engine=v2`        
+        uri: `https://edifice.auth0.com/api/v2/users?q=mcuuid%3D${this.request.body.playerId}&search_engine=v2`
     });
-    
+
     let existingUsers = existingUsersRes.body;
     if(existingUsers.length > 0) {
         throw Boom.badRequest(`User with UUID ${this.request.body.playerId} has already signed up.`)
     }
-    
+
     // Generate a new code if an existing one in the DB doesn't exist or is expired
     let iterations = 0;
     let code = yield VerificationCode.findOne({
@@ -73,7 +73,7 @@ function* grantVerificationCode(next) {
 // This will eliminate the possibility of a timing attack
 // https://codahale.com/a-lesson-in-timing-attacks/
 function matchesSecretKey(testToken) {
-    let authToken = config.edificeMCAuth;
+    let authToken = config.get('edificeMCAuth');
     if (authToken.length !== testToken.length) {
         return false;
     }
