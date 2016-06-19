@@ -1,11 +1,12 @@
 'use strict';
 
-let koa = require('koa');
-let bodyparser = require('koa-bodyparser');
-let Router = require('koa-router');
-let logger = require('winston');
-let config = require('./config.json');
-let https = require('https');
+const koa = require('koa');
+const bodyparser = require('koa-bodyparser');
+const Router = require('koa-router');
+const logger = require('winston');
+const fs = require('fs');
+const config = require('config');
+const https = require('https');
 require('./services/MongooseClient');
 
 let app = koa({ name: 'Edifice' });
@@ -16,7 +17,7 @@ app.use(require('./middleware/boom'));
 app.use(bodyparser());
 
 // Set up routes
-let router = new Router({ prefix: '/api' });
+const router = new Router({ prefix: '/api' });
 const controllers = ['structures/structures', 'stars/stars', 'stats/stats', 'playercache/playercache', 'imgur/imgur', 'auth/signup/signup', 'auth/verificationcode/verificationcode'];
 controllers.forEach(function(file) {
     logger.info('Loading controller "' + file + '"...');
@@ -26,6 +27,16 @@ controllers.forEach(function(file) {
 // load the routes
 app.use(router.routes());
 
-https.createServer(app.callback()).listen(config.apiPort);
+const port = config.get('apiPort');
+if(process.env.NODE_ENV === 'production') {
+    const options = {
+        key: fs.readFileSync(config.get('KEY_PATH')),
+        cert: fs.readFileSync(config.get('CERT_PATH'))
+    };
+    https.createServer(options, app.callback()).listen(port);
+} else {
+    https.createServer(app.callback()).listen(port);
+}
+
 
 module.exports = app;

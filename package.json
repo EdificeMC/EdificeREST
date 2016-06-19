@@ -6,8 +6,8 @@
   "main": "app.js",
   "scripts": {
     "init": "cp -u config-sample.json config.json",
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "dev": "NODE_ENV=development nodemon app.js",
+    "prod": "NODE_ENV=production node app.js",
     "test": "mocha test"
   },
   "engines": {
@@ -20,6 +20,7 @@
     "axios": "0.10.0",
     "bluebird": "^3.4.0",
     "boom": "^3.1.2",
+    "config": "^1.21.0",
     "joi": "^8.4.0",
     "koa": "1.2.0",
     "koa-bodyparser": "^2.2.0",
