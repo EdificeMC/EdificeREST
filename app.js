@@ -17,7 +17,7 @@ app.use(require('./middleware/boom'));
 app.use(bodyparser());
 
 // Set up routes
-const router = new Router({ prefix: '/api' });
+const router = new Router();
 const controllers = ['structures/structures', 'stars/stars', 'stats/stats', 'playercache/playercache', 'imgur/imgur', 'auth/signup/signup', 'auth/verificationcode/verificationcode'];
 controllers.forEach(function(file) {
     logger.info('Loading controller "' + file + '"...');
