@@ -9,4 +9,4 @@ REST API to provide functionality for Edifice
 1. Run `npm start`
 
 ## Running in production
-1. `env NODE_ENV=production NODE_CONFIG_DIR=./EdificeREST/config node EdificeREST/app.js`
+1. `NODE_ENV=production NODE_CONFIG_DIR=./EdificeREST/config pm2 start EdificeREST/app.js`
