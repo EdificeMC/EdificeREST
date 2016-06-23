@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/RobertHerhold/EdificeREST.svg?branch=master)](https://travis-ci.org/RobertHerhold/EdificeREST) [![Coverage Status](https://coveralls.io/repos/github/EdificeMC/EdificeREST/badge.svg?branch=master)](https://coveralls.io/github/EdificeMC/EdificeREST?branch=master)
+[![Build Status](https://travis-ci.org/EdificeMC/EdificeREST.svg?branch=master)](https://travis-ci.org/RobertHerhold/EdificeREST) [![Coverage Status](https://coveralls.io/repos/github/EdificeMC/EdificeREST/badge.svg?branch=master)](https://coveralls.io/github/EdificeMC/EdificeREST?branch=master)
 
 # EdificeREST
 REST API to provide functionality for Edifice
