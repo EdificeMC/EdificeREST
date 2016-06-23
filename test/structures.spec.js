@@ -11,7 +11,7 @@ const app = require('../app').listen();
 rp = rp.defaults({
     resolveWithFullResponse: true,
     json: true,
-    baseUrl: 'http://localhost:' + app.address().port + '/api'
+    baseUrl: 'http://localhost:' + app.address().port
 })
 
 describe('/structures endpoint', function() {
