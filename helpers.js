@@ -7,14 +7,17 @@ rp = rp.defaults({
     json: true
 });
 
-exports.validateUser = function*(authHeader) {
+exports.validateUser = function(authHeader) {
     if(!authHeader) {
         throw Boom.unauthorized();
     }
-    
+
+    //TODO check for 'Bearer ' and throw a bad request if it doesn't exist
+
+    // 'Bearer ' is 7 chars long
     const token = authHeader.substring(7);
-    
-    return yield rp({
+
+    return rp({
         method: 'POST',
         uri: 'https://edifice.auth0.com/tokeninfo',
         body: {
