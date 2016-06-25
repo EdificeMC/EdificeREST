@@ -1,7 +1,7 @@
 'use strict';
 
 let Boom = require('boom');
-let Joi = require('joi');
+const helpers = require('../../helpers');
 let rp = require('request-promise');
 let config = require('config');
 let signupSchema = require('./signup.schema');
@@ -21,10 +21,8 @@ exports.init = function(router, app) {
 }
 
 function* signup(next) {
-    let inputValidation = Joi.validate(this.request.body, signupSchema.input);
-    if(inputValidation.error) {
-        throw Boom.badRequest(inputValidation.error)
-    }
+    helpers.validateInput(this.request.body, signupSchema.input);
+
     // Validate verification code
     let verificationCode = yield VerificationCode.findOne({
         code: this.request.body.verificationCode

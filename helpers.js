@@ -1,11 +1,19 @@
 'use strict';
 
 const Boom = require('boom');
+const Joi = require('joi');
 let rp = require('request-promise');
 
 rp = rp.defaults({
     json: true
 });
+
+exports.validateInput = function(input, schema) {
+    const inputValidation = Joi.validate(input, schema);
+    if(inputValidation.error) {
+        throw Boom.badRequest(inputValidation.error)
+    }
+}
 
 exports.validateUser = function(authHeader) {
     if(!authHeader) {

@@ -6,7 +6,6 @@ let rp = require('request-promise');
 let config = require('config');
 const helpers = require('../../helpers');
 let Boom = require('boom');
-let Joi = require('joi');
 
 let auth0rp = rp.defaults({
     headers: {
@@ -22,11 +21,7 @@ exports.init = function(router, app) {
 }
 
 function* grantVerificationCode(next) {
-    // Validate the input
-    let inputValidation = Joi.validate(this.request.body, verificationCodeSchema.input);
-    if(inputValidation.error) {
-        throw Boom.badRequest(inputValidation.error)
-    }
+    helpers.validateInput(this.request.body, verificationCodeSchema.input);
 
     // Make sure the sender is authorized
     if(!this.header.authorization || !helpers.stringEquals(config.get('edificeMCAuth'), this.header.authorization)) {

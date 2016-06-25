@@ -1,5 +1,6 @@
 'use strict';
 
+const Joi = require('joi');
 const helpers = require('../../helpers');
 const Boom = require('boom');
 require('co-mocha');
@@ -9,6 +10,21 @@ chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 
 describe('Helpers', function() {
+    describe('Input validation', function() {
+        const schema = Joi.object().keys({
+            foo: Joi.string().required()
+        });
+
+        it('should error for an invalid input', function*() {
+            expect(helpers.validateInput.bind(this, {foo: true}, schema)).to.throw('ValidationError');
+        });
+
+        it('should not error for valid input', function*() {
+            // If it returns nothing and doesn't throw an error, it's fine
+            expect(helpers.validateInput({foo: 'bar'}, schema)).to.equal(undefined);
+        });
+    });
+
     describe('User validation', function() {
         it('should error for no auth header', function*() {
             // The `this` scope doesn't really matter, but it doesn't hurt
