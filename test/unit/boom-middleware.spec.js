@@ -1,6 +1,6 @@
 'use strict';
 
-const boomMiddleware = require('../middleware/boom');
+const boomMiddleware = require('../../middleware/boom');
 const Boom = require('boom');
 require('co-mocha');
 const expect = require('chai').expect;

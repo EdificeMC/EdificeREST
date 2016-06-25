@@ -7,7 +7,7 @@ var expect = chai.expect;
 
 var rp = require('request-promise');
 
-const app = require('../app').listen();
+const app = require('../../app').listen();
 rp = rp.defaults({
     resolveWithFullResponse: true,
     json: true,

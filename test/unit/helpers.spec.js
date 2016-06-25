@@ -1,6 +1,6 @@
 'use strict';
 
-const helpers = require('../helpers');
+const helpers = require('../../helpers');
 const Boom = require('boom');
 require('co-mocha');
 const chai = require('chai');

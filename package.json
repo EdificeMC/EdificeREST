@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "NODE_ENV=development nodemon app.js",
     "prod": "NODE_ENV=production node app.js",
-    "test": "mocha test/"
+    "test": "mocha --recursive test/"
   },
   "engines": {
     "npm": ">=3.0.0",
