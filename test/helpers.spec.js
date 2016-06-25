@@ -18,14 +18,15 @@ describe('Helpers', function() {
         });
 
         it('should error for invalid auth header', function*() {
-            expect(helpers.validateUser('Bearer invalid-token')).to.eventually.throw('Unauthorized');
+            yield expect(helpers.validateUser('Bearer invalid-token')).to.be.rejectedWith('Unauthorized');
         });
 
         it('should correctly retrieve the user info from the auth header', function*() {
             const jwt = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2VkaWZpY2UuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDU3NmRjNjBiZjA1MzE0NmM2MzZlY2MxYSIsImF1ZCI6Imk2M1hRN1FQVm5ITmFkQnJ2Q3lXVkd2YVVQcUFHeENuIiwiZXhwIjoxNDY5NDAzOTgxLCJpYXQiOjE0NjY4MTE5ODF9.GTcKVVALYrseqcbMSAlp4iDrLTyK9a6Yhq6RtU_yHQE';
             const header = 'Bearer ' + jwt;
 
-            expect(helpers.validateUser(header)).to.eventually.containSubset({
+            // This object contains most of the properties from the user profile from Auth0 - they shouldn't ever change
+            yield expect(helpers.validateUser(header)).to.eventually.containSubset({
                 email: 'testuser@edificemc.com',
                 nickname: 'testuser',
                 name: 'testuser@edificemc.com',
