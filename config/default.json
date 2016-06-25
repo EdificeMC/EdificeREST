@@ -1,6 +1,3 @@
 {
-    "imgurClientId": "client-id",
-    "edificeMCAuth": "token",
-    "auth0Token": "token",
     "API_PORT": 3000
 }
