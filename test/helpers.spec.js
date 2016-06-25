@@ -43,4 +43,19 @@ describe('Helpers', function() {
             });
         });
     });
+
+    describe('Smart string equality', function() {
+        it('should be false for different lengths', function*() {
+            expect(helpers.stringEquals('test', 'testtest')).to.equal(false);
+        });
+
+        it('should be false for different strings of same length', function*() {
+            // Different strings but same length
+            expect(helpers.stringEquals('test', 'asdf')).to.equal(false);
+        })
+
+        it('should be true for matching strings', function*() {
+            expect(helpers.stringEquals('test', 'test')).to.equal(true);
+        });
+    });
 });

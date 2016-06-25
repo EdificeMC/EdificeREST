@@ -4,6 +4,7 @@ let VerificationCode = require('./VerificationCode.model');
 let verificationCodeSchema = require('./verificationcode.schema');
 let rp = require('request-promise');
 let config = require('config');
+const helpers = require('../../helpers');
 let Boom = require('boom');
 let Joi = require('joi');
 
@@ -28,7 +29,7 @@ function* grantVerificationCode(next) {
     }
 
     // Make sure the sender is authorized
-    if(!this.header.authorization || !matchesSecretKey(this.header.authorization)) {
+    if(!this.header.authorization || !helpers.stringEquals(config.get('edificeMCAuth'), this.header.authorization)) {
         throw Boom.unauthorized();
     }
 
@@ -68,19 +69,4 @@ function* grantVerificationCode(next) {
 
     this.status = 201;
     this.body = code;
-}
-
-// This will eliminate the possibility of a timing attack
-// https://codahale.com/a-lesson-in-timing-attacks/
-function matchesSecretKey(testToken) {
-    let authToken = config.get('edificeMCAuth');
-    if (authToken.length !== testToken.length) {
-        return false;
-    }
-
-    let result = true;
-    for (let i = 0; i < testToken.length; i++) {
-        result = result && testToken.charAt(i) === authToken.charAt(i);
-    }
-    return result;
 }

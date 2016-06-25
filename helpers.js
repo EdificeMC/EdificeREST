@@ -27,3 +27,17 @@ exports.validateUser = function(authHeader) {
         throw Boom.unauthorized();
     });
 }
+
+// This will eliminate the possibility of a timing attack
+// https://codahale.com/a-lesson-in-timing-attacks/
+exports.stringEquals = function(actual, test) {
+    if (actual.length !== test.length) {
+        return false;
+    }
+
+    let result = true;
+    for (let i = 0; i < test.length; i++) {
+        result = result && test.charAt(i) === actual.charAt(i);
+    }
+    return result;
+}
