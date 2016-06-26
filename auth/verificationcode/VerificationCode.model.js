@@ -11,7 +11,7 @@ let VerificationCodeSchema = new mongoose.Schema({
 });
 
 VerificationCodeSchema.methods.isExpired = function() {
-    let expiryDate = this.created.setHours(creationDate.getHours() + EXPIRY_HOURS);
+    let expiryDate = this.created.setHours(this.created.getHours() + EXPIRY_HOURS);
     let now = new Date();
 
     if(expiryDate < now) {
