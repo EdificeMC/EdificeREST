@@ -50,7 +50,8 @@ function* grantVerificationCode(next) {
         if(!code) {
             code = yield VerificationCode.create({
                 code: newCode,
-                playerId: this.request.body.playerId
+                playerId: this.request.body.playerId,
+                created: new Date()
             })
         }
         // Give up after 10 tries, although this shouldn't ever happen
