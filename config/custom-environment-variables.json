@@ -1,5 +1,6 @@
 {
     "imgurClientId": "IMGUR_CLIENT_ID",
     "edificeMCAuth": "EDIFICE_MC_AUTH_TOKEN",
-    "auth0Token": "AUTH0_TOKEN"
+    "auth0Token": "AUTH0_TOKEN",
+    "TEST_USER_AUTH_TOKEN": "TEST_USER_AUTH_TOKEN"
 }

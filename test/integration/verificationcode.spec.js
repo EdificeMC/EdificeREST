@@ -16,7 +16,7 @@ rp = rp.defaults({
     baseUrl: 'http://localhost:' + app.address().port
 })
 
-describe('/verificationcode endpoint', function() {
+describe('/auth/verificationcode endpoint', function() {
     describe('get a code', function() {
         const existingUserBody = {
             playerId: '00000000000000000000000000000000'

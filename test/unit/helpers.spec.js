@@ -1,6 +1,7 @@
 'use strict';
 
 const Joi = require('joi');
+const config = require('config');
 const helpers = require('../../helpers');
 const Boom = require('boom');
 require('co-mocha');
@@ -38,19 +39,22 @@ describe('Helpers', function() {
         });
 
         it('should correctly retrieve the user info from the auth header', function*() {
-            const jwt = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2VkaWZpY2UuYXV0aDAuY29tLyIsInN1YiI6ImF1dGgwfDU3NmRjNjBiZjA1MzE0NmM2MzZlY2MxYSIsImF1ZCI6Imk2M1hRN1FQVm5ITmFkQnJ2Q3lXVkd2YVVQcUFHeENuIiwiZXhwIjoxNDY5NDAzOTgxLCJpYXQiOjE0NjY4MTE5ODF9.GTcKVVALYrseqcbMSAlp4iDrLTyK9a6Yhq6RtU_yHQE';
-            const header = 'Bearer ' + jwt;
+            const header = 'Bearer ' + config.get('TEST_USER_AUTH_TOKEN');
 
             // This object contains most of the properties from the user profile from Auth0 - they shouldn't ever change
             yield expect(helpers.validateUser(header)).to.eventually.containSubset({
                 email: 'testuser@edificemc.com',
+                picture: 'https://crafatar.com/avatars/00000000000000000000000000000000',
                 nickname: 'testuser',
                 name: 'testuser@edificemc.com',
+                app_metadata: {
+                    mcuuid: '00000000000000000000000000000000'
+                },
                 country: 'United States',
                 clientID: 'i63XQ7QPVnHNadBrvCyWVGvaUPqAGxCn',
-                user_id: 'auth0|576dc60bf053146c636ecc1a',
+                user_id: 'auth0|577056fb8d8517a26aa03286',
                 identities: [{
-                    user_id: '576dc60bf053146c636ecc1a',
+                    user_id: '577056fb8d8517a26aa03286',
                     provider: 'auth0',
                     connection: 'Username-Password-Authentication',
                     isSocial: false

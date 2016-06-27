@@ -27,8 +27,13 @@ function* signup(next) {
     let verificationCode = yield VerificationCode.findOne({
         code: this.request.body.verificationCode
     })
-    if(!verificationCode || verificationCode.isExpired()) {
+
+    if(!verificationCode) {
         throw Boom.badRequest('Invalid verification code.');
+    }
+
+    if(verificationCode.isExpired()) {
+        throw Boom.badRequest('Expired verification code.');
     }
 
     let response = yield auth0rp({
@@ -53,5 +58,5 @@ function* signup(next) {
     VerificationCode.remove(verificationCode).exec();
 
     this.status = 201;
-    this.body = {};
+    this.body = response.body;
 }
