@@ -50,7 +50,7 @@ describe('/auth/verificationcode endpoint', function() {
 
             expect(res.statusCode).to.equal(400);
             expect(res.body.error).to.equal('Bad Request');
-            expect(res.body.message).to.equal(`User with UUID ${existingUserBody.playerId} has already signed up.`);
+            expect(res.body.message).to.equal('User already signed up.');
             expect(res.headers['content-type']).to.contain('json');
             expect(res.body).to.be.an('object');
         });

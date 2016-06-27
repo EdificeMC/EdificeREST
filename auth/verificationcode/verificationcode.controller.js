@@ -34,7 +34,7 @@ function* grantVerificationCode(next) {
 
     let existingUsers = existingUsersRes.body;
     if(existingUsers.length > 0) {
-        throw Boom.badRequest(`User with UUID ${this.request.body.playerId} has already signed up.`)
+        throw Boom.badRequest('User already signed up.');
     }
 
     // Generate a new code if an existing one in the DB doesn't exist or is expired
