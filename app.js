@@ -6,6 +6,7 @@ const Router = require('koa-router');
 const logger = require('winston');
 const fs = require('fs');
 const config = require('config');
+const http = require('http');
 const https = require('https');
 require('./services/MongooseClient');
 
@@ -28,6 +29,7 @@ controllers.forEach(function(file) {
 app.use(router.routes());
 
 const port = config.get('API_PORT');
+logger.info('Opening server on port ' + port);
 if(process.env.NODE_ENV === 'production') {
     const options = {
         key: fs.readFileSync(config.get('KEY_PATH')),
@@ -35,7 +37,7 @@ if(process.env.NODE_ENV === 'production') {
     };
     https.createServer(options, app.callback()).listen(port);
 } else {
-    https.createServer(app.callback()).listen(port);
+    http.createServer(app.callback()).listen(port);
 }
 
 
