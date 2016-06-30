@@ -1,9 +1,16 @@
 'use strict';
 
-var Boom = require('boom');
-var Structure = require('./Structure.model');
-var stats = require('../stats/stats.controller');
-let NodeCache = require('node-cache');
+const Boom = require('boom');
+const stats = require('../stats/stats.controller');
+const NodeCache = require('node-cache');
+const structureSchema = require('./structure.schema');
+const helpers = require('../helpers');
+const _get = require('lodash/get');
+const _merge = require('lodash/merge');
+const promisify = require('promisify-node');
+const datastore = require('gcloud').datastore({
+    projectId: 'project-2072714222187644603'
+});
 
 // Cache of IP addresses mapped to an array of structure IDs that they have done a GET request for in the past 24 hours
 // This is used to make sure people don't inflate the number of views that are counted by refreshing the page/doing
@@ -17,9 +24,11 @@ let NodeCache = require('node-cache');
 //         'structureId': true
 //     }
 // }
-let ipCache = new NodeCache({
+const ipCache = new NodeCache({
     useClones: false
 });
+
+const structureKey = datastore.key('Structure');
 
 exports.init = function(router, app) {
     router.post('/structures', createStructure);
@@ -29,35 +38,73 @@ exports.init = function(router, app) {
 }
 
 function* createStructure() {
-    var structure = this.request.body;
+    let structure = this.request.body;
     structure.finalized = false;
-    structure = yield Structure.create(structure);
+
+    const res = yield new Promise((resolve, reject) => {
+        datastore.save({
+            key: structureKey,
+            data: structure
+        }, function(err, res) {
+            if(err) {
+                return reject(err);
+            }
+            return resolve(res);
+        });
+    });
+
+    // TODO figure out a better way to get the ID other than this magic path
+    structure.id = _get(res, 'mutationResults[0].key.path[0].id');
+    // Remove the blocks to make the response smaller
+    delete structure.blocks;
+
     this.status = 201;
     this.body = structure;
 }
 
 function* finalizeStructure() {
-    let structure = yield Structure.findOne({
-        '_id': this.params.id
-    }).exec();
-    if(!structure) {
-        throw new Boom.notFound('Structure with ID ' + this.params.id + " not found.");
+    helpers.validateInput(this.request.body, structureSchema.finalize.input);
+
+    // the gcloud datastore takes only an int
+    const structureId = parseInt(this.params.id);
+    if(!structureId) {
+        throw Boom.badRequest('Invalid structure ID');
     }
-    let structureUpdate = this.request.body;
-    // TODO Do some better validation than this
-    const acceptedKeys = ['name', 'screenshot'];
-    for(let key in structureUpdate) {
-        if(!acceptedKeys.indexOf(key) === -1) {
-            delete acceptedKeys[key];
+
+    const res = yield new Promise((resolve, reject) => {
+        datastore.runInTransaction((transaction, done) => {
+            transaction.get(datastore.key(['Structure', structureId]), (err, structure) => {
+                if (err) {
+                    return reject(err);
+                }
+                if(!structure) {
+                    return reject(new Boom.notFound('Structure with ID ' + this.params.id + " not found."))
+                }
+                _merge(structure.data, this.request.body);
+                structure.data.finalized = true;
+                transaction.save(structure);
+
+                // Keep a reference around for including in the response
+                this.structure = structure.data;
+
+                done();
+            });
+        }, function(transactionError) {
+            if (transactionError) {
+                return reject(transactionError);
+            }
+            return resolve();
+        });
+    }).catch(err => {
+        if(err.isBoom) {
+            throw err;
         }
-    }
-    structureUpdate.finalized = true;
-    yield Structure.update({'_id': this.params.id}, structureUpdate).exec();
-    
+    });
+
     this.status = 200;
-    this.body = yield Structure.findOne({
-        '_id': this.params.id
-    }).exec();
+    // Delete blocks from the response
+    delete this.structure.blocks;
+    this.body = this.structure
 }
 
 function* getAllStructures() {
@@ -65,42 +112,74 @@ function* getAllStructures() {
         'finalized': true
     };
     Object.assign(searchTerms, this.query || {});
-    var structures = yield Structure.find(searchTerms, '-blocks -__v').exec();
+    let query = datastore.createQuery('Structure');
+    for(const condition in searchTerms) {
+        query = query.filter(condition, '=', searchTerms[condition]);
+    }
+
+    const res = yield new Promise((resolve, reject) => {
+        datastore.runQuery(query, function(err, data) {
+            if(err) {
+                return reject(err);
+            }
+            return resolve(data);
+        });
+    })
+
+    let structures = [];
+
+    for(const entry of res) {
+        delete entry.data.blocks;
+        structures.push(entry.data);
+    }
+
     this.status = 200;
     this.body = structures;
 }
 
 function* getStructure() {
-    var structure = yield Structure.findOne({
-        '_id': this.params.id
-    }, '-__v').exec();
-    if(!structure) {
+    // the gcloud datastore takes only an int
+    const structureId = parseInt(this.params.id);
+    if(!structureId) {
+        throw Boom.badRequest('Invalid structure ID');
+    }
+
+    const res = yield new Promise(function(resolve, reject) {
+        datastore.get(datastore.key(['Structure', structureId]), function(err, data) {
+            if(err) {
+                return reject(err);
+            }
+            return resolve(data);
+        })
+    });
+
+    if(!res) {
         throw new Boom.notFound('Structure with ID ' + this.params.id + " not found.");
     }
-    
+
     // Keep track of this request as a metric in the DB
-    const agent = this.query.agent;
-    if(agent) {
-        if(agent === 'EdificeWeb') {
-            // Check the IP of the request sender so we don't count multiple views from the same IP in the same 24hr period
-            let structureIdCache = ipCache.get(this.ip);
-            if(structureIdCache) {
-                if(!structureIdCache.get(this.params.id)) {
-                    // The user has not yet gotten this structure in the last 24 hours
-                    yield stats.incrementViews(structure, this.query.agent);
-                    structureIdCache.set(this.params.id, true);
-                }
-            } else {
-                yield stats.incrementViews(structure, this.query.agent);
-                let newstructureIdCache = new NodeCache({
-                    stdTTL: 86400 // 1 day = 86400 seconds
-                });
-                newstructureIdCache.set(this.params.id, true);
-                ipCache.set(this.ip, newstructureIdCache);
-            }
-        }
-    }
-    
+    // const agent = this.query.agent;
+    // if(agent) {
+    //     if(agent === 'EdificeWeb') {
+    //         // Check the IP of the request sender so we don't count multiple views from the same IP in the same 24hr period
+    //         let structureIdCache = ipCache.get(this.ip);
+    //         if(structureIdCache) {
+    //             if(!structureIdCache.get(this.params.id)) {
+    //                 // The user has not yet gotten this structure in the last 24 hours
+    //                 yield stats.incrementViews(structure, this.query.agent);
+    //                 structureIdCache.set(this.params.id, true);
+    //             }
+    //         } else {
+    //             yield stats.incrementViews(structure, this.query.agent);
+    //             let newstructureIdCache = new NodeCache({
+    //                 stdTTL: 86400 // 1 day = 86400 seconds
+    //             });
+    //             newstructureIdCache.set(this.params.id, true);
+    //             ipCache.set(this.ip, newstructureIdCache);
+    //         }
+    //     }
+    // }
+
     this.status = 200;
-    this.body = structure;
+    this.body = res.data;
 }
