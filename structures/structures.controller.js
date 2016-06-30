@@ -5,8 +5,7 @@ const stats = require('../stats/stats.controller');
 const NodeCache = require('node-cache');
 const structureSchema = require('./structure.schema');
 const helpers = require('../helpers');
-const _get = require('lodash/get');
-const _merge = require('lodash/merge');
+const _ = require('lodash');
 const promisify = require('promisify-node');
 const datastore = require('gcloud').datastore({
     projectId: 'project-2072714222187644603'
@@ -54,7 +53,7 @@ function* createStructure() {
     });
 
     // TODO figure out a better way to get the ID other than this magic path
-    structure.id = _get(res, 'mutationResults[0].key.path[0].id');
+    structure.id = _.get(res, 'mutationResults[0].key.path[0].id');
     // Remove the blocks to make the response smaller
     delete structure.blocks;
 
@@ -80,7 +79,7 @@ function* finalizeStructure() {
                 if(!structure) {
                     return reject(new Boom.notFound('Structure with ID ' + this.params.id + " not found."))
                 }
-                _merge(structure.data, this.request.body);
+                _.merge(structure.data, this.request.body);
                 structure.data.finalized = true;
                 transaction.save(structure);
 
