@@ -1,3 +1,4 @@
 {
-    "API_PORT": 3000
+    "API_PORT": 3000,
+    "VERIFICATION_CODE_EXPIRY_HOURS": 1
 }

@@ -9,10 +9,14 @@ const config = require('config');
 const http = require('http');
 const https = require('https');
 const path = require('path');
-const gcloud = require('gcloud')();
+const gcloud = require('gcloud')({
+    projectId: 'project-2072714222187644603'
+});
 // require('./services/MongooseClient');
 
 let app = koa({ name: 'Edifice' });
+
+app.gcloud = gcloud; // Keep the configured instance of gcloud around in app
 
 app.use(require('koa-logger')());
 app.use(require('koa-cors')({ methods: ['GET', 'PUT', 'POST', 'DELETE'] }));
@@ -22,7 +26,7 @@ app.use(bodyparser());
 // Set up routes
 const router = new Router();
 // const controllers = ['structures/structures', 'stars/stars', 'stats/stats', 'playercache/playercache', 'imgur/imgur', 'auth/signup/signup', 'auth/verificationcode/verificationcode'];
-const controllers = ['structures/structures'];
+const controllers = ['structures/structures', 'auth/verificationcode/verificationcode'];
 controllers.forEach(function(file) {
     logger.info('Loading controller "' + file + '"...');
     require('./' + file + '.controller').init(router, app);

@@ -1,13 +1,17 @@
 'use strict';
 
-let VerificationCode = require('./VerificationCode.model');
-let verificationCodeSchema = require('./verificationcode.schema');
-let rp = require('request-promise');
-let config = require('config');
+const VerificationCode = require('./VerificationCode.model');
+const verificationCodeSchema = require('./verificationcode.schema');
+const rp = require('request-promise');
+const config = require('config');
 const helpers = require('../../helpers');
-let Boom = require('boom');
+const Boom = require('boom');
+const moment = require('moment');
+const _ = require('lodash');
+let gcloud;
+let datastore;
 
-let auth0rp = rp.defaults({
+const auth0rp = rp.defaults({
     headers: {
         'Authorization': `Bearer ${config.get('auth0Token')}`
     },
@@ -18,6 +22,9 @@ let auth0rp = rp.defaults({
 
 exports.init = function(router, app) {
     router.post('/auth/verificationcode', grantVerificationCode);
+
+    gcloud = app.gcloud;
+    datastore = gcloud.datastore();
 }
 
 function* grantVerificationCode(next) {
@@ -37,31 +44,76 @@ function* grantVerificationCode(next) {
         throw Boom.badRequest('User already signed up.');
     }
 
-    // Generate a new code if an existing one in the DB doesn't exist or is expired
+    // Generate a new code if an existing one in the DS doesn't exist or is expired
     let iterations = 0;
-    let code = yield VerificationCode.findOne({
-        playerId: this.request.body.playerId
-    })
-    while(!code || code.isExpired()) {
+
+    let minCreationMoment = moment();
+    minCreationMoment.subtract(config.get('VERIFICATION_CODE_EXPIRY_HOURS'), 'hours');
+    console.log(minCreationMoment.toDate());
+
+    const existingPlayerCodes = yield new Promise((resolve, reject) => {
+        datastore.createQuery('VerificationCode')
+            .filter('playerId', '=', this.request.body.playerId)
+            .filter('created', '>', minCreationMoment.toDate())
+            .limit(1)
+            .run(function(err, data) {
+                if(err) {
+                    console.log('err1');
+                    console.log(err);
+                    console.log(data);
+                    return reject(err);
+                }
+                return resolve(data);
+            });
+    });
+    console.log(existingPlayerCodes);
+
+    let code = _.get(existingPlayerCodes, '[0].data');
+
+    while(!code) {
         let newCode = Math.random().toString(36).substring(2, 8); // 6 character long alphanumeric string
-        code = yield VerificationCode.findOne({
-            code: newCode
-        }).exec();
-        if(!code) {
-            code = yield VerificationCode.create({
-                code: newCode,
-                playerId: this.request.body.playerId,
-                created: new Date()
-            })
+
+        const query = datastore.createQuery('VerificationCode')
+            .filter('code', '=', newCode);
+
+        const conflictingCodes = yield new Promise(function(resolve, reject) {
+            datastore.runQuery(query, function(err, data) {
+                if(err) {
+                    console.log('err2');
+                    return reject(err);
+                }
+                return resolve(data);
+            });
+        });
+
+        const existingCode = _.get(conflictingCodes, '[0].data');
+        if(existingCode) {
+            // Give up after 10 tries, although this shouldn't ever happen
+            if(iterations > 10) {
+                throw new Boom.badImplementation('Failed to generate a new verification code');
+            }
+            continue;
         }
-        // Give up after 10 tries, although this shouldn't ever happen
-        if(iterations > 10) {
-            throw new Boom.badImplementation('Failed to generate a new verification code');
+
+        code = {
+            playerId: this.request.body.playerId,
+            code: newCode,
+            created: new Date()
         }
+
+        const saveRes = yield new Promise((resolve, reject) => {
+            datastore.save({
+                key: datastore.key('VerificationCode'),
+                data: code
+            }, function(err, res) {
+                if(err) {
+                    console.log('err3');
+                    return reject(err);
+                }
+                return resolve(res);
+            });
+        });
     }
-    // Sanitize output
-    code._id = undefined;
-    code.__v = undefined;
 
     this.status = 201;
     this.body = code;

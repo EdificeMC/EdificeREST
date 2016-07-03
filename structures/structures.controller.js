@@ -6,10 +6,8 @@ const NodeCache = require('node-cache');
 const structureSchema = require('./structure.schema');
 const helpers = require('../helpers');
 const _ = require('lodash');
-const promisify = require('promisify-node');
-const datastore = require('gcloud').datastore({
-    projectId: 'project-2072714222187644603'
-});
+let gcloud;
+let datastore;
 
 // Cache of IP addresses mapped to an array of structure IDs that they have done a GET request for in the past 24 hours
 // This is used to make sure people don't inflate the number of views that are counted by refreshing the page/doing
@@ -27,13 +25,14 @@ const ipCache = new NodeCache({
     useClones: false
 });
 
-const structureKey = datastore.key('Structure');
-
 exports.init = function(router, app) {
     router.post('/structures', createStructure);
     router.put('/structures/:id', finalizeStructure);
     router.get('/structures', getAllStructures);
     router.get('/structures/:id', getStructure);
+
+    gcloud = app.gcloud;
+    datastore = gcloud.datastore();
 }
 
 function* createStructure() {
@@ -42,7 +41,7 @@ function* createStructure() {
 
     const res = yield new Promise((resolve, reject) => {
         datastore.save({
-            key: structureKey,
+            key: datastore.key('Structure'),
             data: structure
         }, function(err, res) {
             if(err) {
