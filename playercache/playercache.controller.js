@@ -22,9 +22,9 @@ let rp = request.defaults({
 var Cache = require('lru-cache');
 var playerCache = new Cache(500);
 
-exports.init = function(router, app) {
+exports.init = function(router) {
     router.get('/playercache/:uuid', getPlayerProfileByUUID);
-}
+};
 
 function* getPlayerProfileByUUID() {
     const uuid = this.params.uuid;

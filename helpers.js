@@ -11,9 +11,9 @@ rp = rp.defaults({
 exports.validateInput = function(input, schema) {
     const inputValidation = Joi.validate(input, schema);
     if(inputValidation.error) {
-        throw Boom.badRequest(inputValidation.error)
+        throw Boom.badRequest(inputValidation.error);
     }
-}
+};
 
 exports.validateUser = function(authHeader) {
     if(!authHeader) {
@@ -31,10 +31,10 @@ exports.validateUser = function(authHeader) {
         body: {
             id_token: token
         }
-    }).catch(function(err) {
+    }).catch(function() {
         throw Boom.unauthorized();
     });
-}
+};
 
 // This will eliminate the possibility of a timing attack
 // https://codahale.com/a-lesson-in-timing-attacks/
@@ -48,4 +48,4 @@ exports.stringEquals = function(actual, test) {
         result = result && test.charAt(i) === actual.charAt(i);
     }
     return result;
-}
+};

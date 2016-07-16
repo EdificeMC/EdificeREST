@@ -1,12 +1,12 @@
 'use strict';
 
-let Structure = require('../structures/Structure.model');
-let stats = require('../stats/stats.controller');
 let config = require('config');
 var Boom = require('boom');
 let helpers = require('../helpers');
 let _ = require('lodash');
 let rp = require('request-promise');
+let gcloud;
+let datastore;
 
 rp = rp.defaults({
     headers: {
@@ -17,23 +17,53 @@ rp = rp.defaults({
 
 exports.init = function(router, app) {
     router.post('/star', starStructure);
-}
+
+    gcloud = app.gcloud;
+    datastore = gcloud.datastore();
+};
 
 function* starStructure() {
     let user = yield helpers.validateUser(this.header.authorization);
 
-    // Make sure the structure exists
-    let structure = yield Structure.findOne({
-        _id: this.request.body.structureId
-    }).exec();
-    if (!structure) {
-        throw Boom.notFound('Structure with ID ' + this.request.body.structureId + ' does not exist.');
-    }
+    const structureId = this.request.body.structureId;
+
+    // Update the structure's stargazers
+    yield new Promise((resolve, reject) => {
+        datastore.runInTransaction((transaction, done) => {
+            transaction.get(datastore.key(['Structure', this.request.body.structureId]), (err, structure) => {
+                if (err) {
+                    return reject(err);
+                }
+                if(!structure) {
+                    return reject(new Boom.notFound('Structure with ID ' + this.request.body.structureId + ' not found.'));
+                }
+
+                let playerIdIndex = structure.data.stargazers.indexOf(user.app_metadata.mcuuid);
+                if (playerIdIndex === -1) {
+                    structure.data.stargazers.push(user.app_metadata.mcuuid);
+                } else {
+                    structure.data.stargazers.splice(playerIdIndex, 1);
+                }
+
+                transaction.save(structure);
+                done();
+            });
+        }, function(transactionError) {
+            if (transactionError) {
+                return reject(transactionError);
+            }
+            return resolve();
+        });
+    }).catch(err => {
+        if(err.isBoom) {
+            throw err;
+        }
+    });
 
     let stars = _.get(user, 'user_metadata.stars', []);
-    let structureIdIndex = stars.indexOf(this.request.body.structureId);
+    let structureIdIndex = stars.indexOf(structureId);
     if (structureIdIndex === -1) {
-        stars.push(this.request.body.structureId);
+        stars.push(structureId);
     } else {
         stars.splice(structureIdIndex, 1);
     }
@@ -49,23 +79,7 @@ function* starStructure() {
         }
     }).catch(function(err) {
         throw Boom.wrap(err);
-    })
-
-    // Update the structure's stargazers
-    let structureUpdate = {
-        stargazers: structure.stargazers
-    };
-    let playerIdIndex = structureUpdate.stargazers.indexOf(user.app_metadata.mcuuid);
-    if (playerIdIndex === -1) {
-        structureUpdate.stargazers.push(user.app_metadata.mcuuid);
-    } else {
-        structureUpdate.stargazers.splice(playerIdIndex, 1);
-    }
-    yield Structure.update({
-        _id: structure._id
-    }, structureUpdate);
-
-    yield stats.updateStars(structure._id, structureUpdate.stargazers.length);
+    });
 
     this.body = null;
     this.status = 200;

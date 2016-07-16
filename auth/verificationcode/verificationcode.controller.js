@@ -1,6 +1,5 @@
 'use strict';
 
-const VerificationCode = require('./VerificationCode.model');
 const verificationCodeSchema = require('./verificationcode.schema');
 const rp = require('request-promise');
 const config = require('config');
@@ -25,9 +24,9 @@ exports.init = function(router, app) {
 
     gcloud = app.gcloud;
     datastore = gcloud.datastore();
-}
+};
 
-function* grantVerificationCode(next) {
+function* grantVerificationCode() {
     helpers.validateInput(this.request.body, verificationCodeSchema.input);
 
     // Make sure the sender is authorized
@@ -49,7 +48,6 @@ function* grantVerificationCode(next) {
 
     let minCreationMoment = moment();
     minCreationMoment.subtract(config.get('VERIFICATION_CODE_EXPIRY_HOURS'), 'hours');
-    console.log(minCreationMoment.toDate());
 
     const existingPlayerCodes = yield new Promise((resolve, reject) => {
         datastore.createQuery('VerificationCode')
@@ -58,15 +56,11 @@ function* grantVerificationCode(next) {
             .limit(1)
             .run(function(err, data) {
                 if(err) {
-                    console.log('err1');
-                    console.log(err);
-                    console.log(data);
                     return reject(err);
                 }
                 return resolve(data);
             });
     });
-    console.log(existingPlayerCodes);
 
     let code = _.get(existingPlayerCodes, '[0].data');
 
@@ -79,7 +73,6 @@ function* grantVerificationCode(next) {
         const conflictingCodes = yield new Promise(function(resolve, reject) {
             datastore.runQuery(query, function(err, data) {
                 if(err) {
-                    console.log('err2');
                     return reject(err);
                 }
                 return resolve(data);
@@ -99,15 +92,14 @@ function* grantVerificationCode(next) {
             playerId: this.request.body.playerId,
             code: newCode,
             created: new Date()
-        }
+        };
 
-        const saveRes = yield new Promise((resolve, reject) => {
+        yield new Promise((resolve, reject) => {
             datastore.save({
                 key: datastore.key('VerificationCode'),
                 data: code
             }, function(err, res) {
                 if(err) {
-                    console.log('err3');
                     return reject(err);
                 }
                 return resolve(res);

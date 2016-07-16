@@ -4,8 +4,10 @@ let Boom = require('boom');
 const helpers = require('../../helpers');
 let rp = require('request-promise');
 let config = require('config');
+const _ = require('lodash');
 let signupSchema = require('./signup.schema');
-let VerificationCode = require('../verificationcode/VerificationCode.model');
+let gcloud;
+let datastore;
 
 let auth0rp = rp.defaults({
     headers: {
@@ -18,15 +20,28 @@ let auth0rp = rp.defaults({
 
 exports.init = function(router, app) {
     router.post('/auth/signup', signup);
-}
 
-function* signup(next) {
+    gcloud = app.gcloud;
+    datastore = gcloud.datastore();
+};
+
+function* signup() {
     helpers.validateInput(this.request.body, signupSchema.input);
 
     // Validate verification code
-    let verificationCode = yield VerificationCode.findOne({
-        code: this.request.body.verificationCode
-    })
+    const existingCodes = yield new Promise((resolve, reject) => {
+        datastore.createQuery('VerificationCode')
+            .filter('code', '=', this.request.body.verificationCode)
+            .limit(1)
+            .run(function(err, data) {
+                if(err) {
+                    return reject(err);
+                }
+                return resolve(data);
+            });
+    });
+
+    const verificationCode = _.get(existingCodes, '[0].data');
 
     if(!verificationCode) {
         throw Boom.badRequest('Invalid verification code.');
@@ -55,7 +70,17 @@ function* signup(next) {
         throw Boom.create(response.statusCode, response.body.message);
     }
 
-    VerificationCode.remove(verificationCode).exec();
+    yield new Promise((resolve, reject) => {
+        datastore.runInTransaction((transaction, done) => {
+            transaction.delete(datastore.key(['VerificationCode', verificationCode.id]));
+            done();
+        }, function(transactionError) {
+            if (transactionError) {
+                return reject(transactionError);
+            }
+            return resolve();
+        });
+    });
 
     this.status = 201;
     this.body = response.body;
