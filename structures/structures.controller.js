@@ -9,7 +9,7 @@ let datastore;
 
 exports.init = function(router, app) {
     router.post('/structures', createStructure);
-    router.put('/structures/:id', finalizeStructure);
+    router.put('/structures/:id', editStructure);
     router.get('/structures', getAllStructures);
     router.get('/structures/:id', getStructure);
 
@@ -42,8 +42,8 @@ function* createStructure() {
     this.body = structure;
 }
 
-function* finalizeStructure() {
-    helpers.validateInput(this.request.body, structureSchema.finalize.input);
+function* editStructure() {
+    helpers.validateInput(this.request.body, structureSchema.edit.input);
 
     // the gcloud datastore takes only an int
     const structureId = parseInt(this.params.id);
@@ -56,20 +56,39 @@ function* finalizeStructure() {
             transaction.get(datastore.key(['Structure', structureId]), (err, structure) => {
 
                 if (err) {
+                    done();
                     return reject(err);
                 }
                 if(!structure) {
-                    return reject(new Boom.notFound('Structure with ID ' + this.params.id + ' not found.'));
+                    done();
+                    return reject(Boom.notFound('Structure with ID ' + this.params.id + ' not found.'));
                 }
-                _.merge(structure.data, this.request.body);
-                structure.data.finalized = true;
-                structure.data.stargazers = [];
-                transaction.save(structure);
 
-                // Keep a reference around for including in the response
-                this.structure = structure.data;
+                let userValidationProm;
+                if(structure.data.finalized) {
+                    userValidationProm = helpers.validateUser(this.header.authorization).then(user => {
+                        if(user.app_metadata.mcuuid !== structure.data.creatorUUID) {
+                            done();
+                            return reject(Boom.unauthorized());
+                        }
+                    });
+                } else {
+                    // The user doesn't need to be validated for the first edit/finalization
+                    // The user having the structure ID is enough identification
+                    structure.data.finalized = true;
+                    userValidationProm = Promise.resolve();
+                }
 
-                done();
+                userValidationProm.then(() => {
+                    _.merge(structure.data, this.request.body);
+                    structure.data.stargazers = [];
+                    transaction.save(structure);
+
+                    // Keep a reference around for including in the response
+                    this.structure = structure.data;
+                    return done();
+                });
+
             });
         }, function(transactionError) {
             if (transactionError) {
@@ -140,6 +159,9 @@ function* getStructure() {
     if(!res) {
         throw new Boom.notFound('Structure with ID ' + this.params.id + ' not found.');
     }
+
+    let structure = res.data;
+    structure.id = res.key.id;
 
     this.status = 200;
     this.body = res.data;
