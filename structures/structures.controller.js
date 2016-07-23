@@ -67,7 +67,7 @@ function* editStructure() {
                 let userValidationProm;
                 if(structure.data.finalized) {
                     userValidationProm = helpers.validateUser(this.header.authorization).then(user => {
-                        if(user.app_metadata.mcuuid !== structure.data.creatorUUID) {
+                        if(user.app_metadata.mcuuid !== structure.data.creatorUUID && !user.app_metadata.roles.includes('admin')) {
                             done();
                             return reject(Boom.unauthorized());
                         }
