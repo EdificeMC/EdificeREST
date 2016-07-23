@@ -9,7 +9,13 @@ let structureSchema = {
             screenshot: Joi.object().keys({
                 url: Joi.string().uri().required(),
                 deletehash: Joi.string().required()
-            }).required()
+            }).required(),
+            modelRendering: Joi.object().keys({
+                fov: Joi.number().required(),
+                lon: Joi.number().required(),
+                lat: Joi.number().required(),
+                texturePack: Joi.string().required(),
+            }).optional()
         })
     }
 };
