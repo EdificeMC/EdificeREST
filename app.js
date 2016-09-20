@@ -4,10 +4,7 @@ const koa = require('koa');
 const bodyparser = require('koa-bodyparser');
 const Router = require('koa-router');
 const logger = require('winston');
-const fs = require('fs');
 const config = require('config');
-const http = require('http');
-const https = require('https');
 const gcloud = require('gcloud')({
     projectId: 'project-2072714222187644603'
 });
@@ -34,15 +31,6 @@ app.use(router.routes());
 
 const port = config.get('API_PORT');
 logger.info('Opening server on port ' + port);
-if(process.env.NODE_ENV === 'production') {
-    const options = {
-        key: fs.readFileSync(config.get('KEY_PATH')),
-        cert: fs.readFileSync(config.get('CERT_PATH'))
-    };
-    https.createServer(options, app.callback()).listen(port);
-} else {
-    http.createServer(app.callback()).listen(port);
-}
-
+app.listen(port);
 
 module.exports = app;
