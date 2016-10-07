@@ -3,9 +3,15 @@
 const Boom = require('boom');
 const structureSchema = require('./structure.schema');
 const helpers = require('../helpers');
+const parse = require('co-busboy');
 const _ = require('lodash');
-let gcloud;
+const cuid = require('cuid');
+const nbt = require('nbt');
+const rp = require('request-promise');
+
 let datastore;
+let bucket;
+const STRUCTURE_COLLECTION_KEY = process.env.NODE_ENV === 'development' ? 'dev_Structure' : 'Structure';
 
 exports.init = function(router, app) {
     router.post('/structures', createStructure);
@@ -13,17 +19,51 @@ exports.init = function(router, app) {
     router.get('/structures', getAllStructures);
     router.get('/structures/:id', getStructure);
 
-    gcloud = app.gcloud;
-    datastore = gcloud.datastore();
+    datastore = app.datastore;
+    bucket = app.storage.bucket('edifice-structures');
 };
 
 function* createStructure() {
-    let structure = this.request.body;
-    structure.finalized = false;
+    const parts = parse(this);
+    const schematicDataStream = yield parts;
 
-    const res = yield new Promise((resolve, reject) => {
+    // Upload the schematic
+    const structureId = cuid();
+    const fileName = structureId + '.schem';
+
+    const remoteWriteStream = bucket.file(fileName).createWriteStream();
+    schematicDataStream.pipe(remoteWriteStream);
+
+    // Get some information from the schematic
+    let structure = {
+        schematic: 'https://storage.googleapis.com/edifice-structures/' + fileName,
+        finalized: false
+    };
+
+    const schematicDataBuffer = yield new Promise(function(resolve) {
+        let data = [];
+        schematicDataStream.on('data', chunk => data.push(chunk));
+        schematicDataStream.on('end', () => resolve(Buffer.concat(data)));
+    });
+
+    const schematic = (yield new Promise(function(resolve, reject) {
+        nbt.parse(schematicDataBuffer, function(err, data) {
+            if(err) {
+                return reject(err);
+            }
+            return resolve(data);
+        });
+    })).value;
+
+    /* eslint-disable quotes */
+    structure.author = _.get(schematic, "Metadata.value['.'].value.Author.value");
+    structure.name = _.get(schematic, "Metadata.value['.'].value.Name.value");
+    /* eslint-enable quotes */
+
+    // Save the structure record
+    yield new Promise((resolve, reject) => {
         datastore.save({
-            key: datastore.key('Structure'),
+            key: datastore.key([STRUCTURE_COLLECTION_KEY, structureId]),
             data: structure
         }, function(err, res) {
             if(err) {
@@ -33,10 +73,7 @@ function* createStructure() {
         });
     });
 
-    // TODO figure out a better way to get the ID other than this magic path
-    structure.id = _.get(res, 'mutationResults[0].key.path[0].id');
-    // Remove the blocks to make the response smaller
-    delete structure.blocks;
+    structure.id = structureId;
 
     this.status = 201;
     this.body = structure;
@@ -44,31 +81,29 @@ function* createStructure() {
 
 function* editStructure() {
     helpers.validateInput(this.request.body, structureSchema.edit.input);
-
+    
     // the gcloud datastore takes only an int
-    const structureId = parseInt(this.params.id);
-    if(!structureId) {
-        throw Boom.badRequest('Invalid structure ID');
-    }
+    const structureId = this.params.id;
 
     yield new Promise((resolve, reject) => {
-        datastore.runInTransaction((transaction, done) => {
-            transaction.get(datastore.key(['Structure', structureId]), (err, structure) => {
-
+        const transaction = datastore.transaction();
+        transaction.run(err => {
+            if(err) {
+                return reject(err);
+            }
+            
+            transaction.get(datastore.key([STRUCTURE_COLLECTION_KEY, structureId]), (err, structure) => {
                 if (err) {
-                    done();
                     return reject(err);
                 }
                 if(!structure) {
-                    done();
                     return reject(Boom.notFound('Structure with ID ' + this.params.id + ' not found.'));
                 }
-
+                
                 let userValidationProm;
                 if(structure.data.finalized) {
                     userValidationProm = helpers.validateUser(this.header.authorization).then(user => {
                         if(user.app_metadata.mcuuid !== structure.data.creatorUUID && !user.app_metadata.roles.includes('admin')) {
-                            done();
                             return reject(Boom.unauthorized());
                         }
                     });
@@ -78,17 +113,23 @@ function* editStructure() {
                     structure.data.finalized = true;
                     userValidationProm = Promise.resolve();
                 }
-
+                
                 userValidationProm.then(() => {
                     _.merge(structure.data, this.request.body);
                     structure.data.stargazers = [];
                     transaction.save(structure);
-
+                    
                     // Keep a reference around for including in the response
                     this.structure = structure.data;
-                    return done();
+                    
+                    transaction.commit(function(err) {
+                        if(err) {
+                            return reject(err);
+                        }
+                        return resolve();
+                    });
                 });
-
+                
             });
         }, function(transactionError) {
             if (transactionError) {
@@ -103,8 +144,6 @@ function* editStructure() {
     });
 
     this.status = 200;
-    // Delete blocks from the response
-    delete this.structure.blocks;
     this.body = this.structure;
 }
 
@@ -113,7 +152,7 @@ function* getAllStructures() {
         'finalized': true
     };
     Object.assign(searchTerms, this.query || {});
-    let query = datastore.createQuery('Structure');
+    let query = datastore.createQuery(STRUCTURE_COLLECTION_KEY);
     for(const condition in searchTerms) {
         query = query.filter(condition, '=', searchTerms[condition]);
     }
@@ -132,7 +171,7 @@ function* getAllStructures() {
     for(const entry of res) {
         const structure = entry.data;
         delete structure.blocks;
-        structure.id = entry.key.id;
+        structure.id = entry.key.name;
         structures.push(structure);
     }
 
@@ -141,14 +180,8 @@ function* getAllStructures() {
 }
 
 function* getStructure() {
-    // the gcloud datastore takes only an int
-    const structureId = parseInt(this.params.id);
-    if(!structureId) {
-        throw Boom.badRequest('Invalid structure ID');
-    }
-
-    const res = yield new Promise(function(resolve, reject) {
-        datastore.get(datastore.key(['Structure', structureId]), function(err, data) {
+    const res = yield new Promise((resolve, reject) => {
+        datastore.get(datastore.key([STRUCTURE_COLLECTION_KEY, this.params.id]), function(err, data) {
             if(err) {
                 return reject(err);
             }
@@ -161,8 +194,45 @@ function* getStructure() {
     }
 
     let structure = res.data;
-    structure.id = res.key.id;
+    structure.id = res.key.name;
+
+    if(this.query.schematic) {
+        const schematicUrl = structure.schematic;
+        const schematicDataBuffer = yield rp({
+            method: 'GET',
+            uri: schematicUrl,
+            encoding: null
+        });
+
+        const jsonData = yield new Promise(function(resolve, reject) {
+            nbt.parse(schematicDataBuffer, function(err, data) {
+                if(err) {
+                    return reject(err);
+                }
+                return resolve(data);
+            });
+        });
+        cleanupNBT(jsonData);
+        structure.schematic = jsonData.value;
+    }
 
     this.status = 200;
     this.body = res.data;
+}
+
+function cleanupNBT(obj) {
+    for(const key in obj) {
+        if(!obj.hasOwnProperty(key)) {
+            continue;
+        }
+
+        const value = obj[key];
+        if(value.type !== undefined && value.value !== undefined) {
+            obj[key] = value.value;
+        }
+
+        if(typeof obj[key] === 'object' && !(obj[key] instanceof Array)) {
+            cleanupNBT(obj[key]);
+        }
+    }
 }

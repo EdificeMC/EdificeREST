@@ -5,7 +5,6 @@ var Boom = require('boom');
 let helpers = require('../helpers');
 let _ = require('lodash');
 let rp = require('request-promise');
-let gcloud;
 let datastore;
 
 rp = rp.defaults({
@@ -15,11 +14,12 @@ rp = rp.defaults({
     json: true
 });
 
+const STRUCTURE_COLLECTION_KEY = process.env.NODE_ENV === 'development' ? 'dev_Structure' : 'Structure';
+
 exports.init = function(router, app) {
     router.post('/star', starStructure);
 
-    gcloud = app.gcloud;
-    datastore = gcloud.datastore();
+    datastore = app.datastore;
 };
 
 function* starStructure() {
@@ -29,8 +29,13 @@ function* starStructure() {
 
     // Update the structure's stargazers
     yield new Promise((resolve, reject) => {
-        datastore.runInTransaction((transaction, done) => {
-            transaction.get(datastore.key(['Structure', this.request.body.structureId]), (err, structure) => {
+        const transaction = datastore.transaction();
+        transaction.run(err => {
+            if(err) {
+                return reject(err);
+            }
+            
+            transaction.get(datastore.key([STRUCTURE_COLLECTION_KEY, this.request.body.structureId]), (err, structure) => {
                 if (err) {
                     return reject(err);
                 }
@@ -46,7 +51,12 @@ function* starStructure() {
                 }
 
                 transaction.save(structure);
-                done();
+                transaction.commit(function(err) {
+                    if(err) {
+                        return reject(err);
+                    }
+                    return resolve();
+                });
             });
         }, function(transactionError) {
             if (transactionError) {

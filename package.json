@@ -16,10 +16,13 @@
   "author": "Robert Herhold <reherhold@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/datastore": "^0.3.1",
+    "@google-cloud/storage": "^0.1.1",
     "axios": "0.10.0",
     "boom": "3.1.2",
+    "co-busboy": "^1.3.1",
     "config": "1.21.0",
-    "gcloud": "^0.36.0",
+    "cuid": "^1.3.8",
     "jimp": "^0.2.27",
     "joi": "8.4.0",
     "koa": "1.2.0",
@@ -30,7 +33,7 @@
     "lodash": "4.13.1",
     "lru-cache": "4.0.1",
     "moment": "^2.13.0",
-    "mongoose": "4.4.10",
+    "nbt": "^0.6.0",
     "request-promise": "3.0.0",
     "winston": "2.2.0"
   },
