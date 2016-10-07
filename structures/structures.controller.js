@@ -12,6 +12,7 @@ const rp = require('request-promise');
 let datastore;
 let bucket;
 const STRUCTURE_COLLECTION_KEY = process.env.NODE_ENV === 'development' ? 'dev_Structure' : 'Structure';
+const STRUCTURE_BUCKET = process.env.NODE_ENV === 'development' ? 'dev-edifice-structures' : 'edifice-structures';
 
 exports.init = function(router, app) {
     router.post('/structures', createStructure);
@@ -20,7 +21,7 @@ exports.init = function(router, app) {
     router.get('/structures/:id', getStructure);
 
     datastore = app.datastore;
-    bucket = app.storage.bucket('edifice-structures');
+    bucket = app.storage.bucket(STRUCTURE_BUCKET);
 };
 
 function* createStructure() {
@@ -36,7 +37,7 @@ function* createStructure() {
 
     // Get some information from the schematic
     let structure = {
-        schematic: 'https://storage.googleapis.com/edifice-structures/' + fileName,
+        schematic: `https://storage.googleapis.com/${STRUCTURE_BUCKET}/${fileName}`,
         finalized: false
     };
 
