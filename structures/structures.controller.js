@@ -171,7 +171,9 @@ function* getAllStructures() {
 
     for(const entry of res) {
         const structure = entry.data;
-        delete structure.blocks;
+        if(structure.hidden) {
+            continue;
+        }
         structure.id = entry.key.name;
         structures.push(structure);
     }
