@@ -153,23 +153,37 @@ function* getAllStructures() {
         'finalized': true
     };
     Object.assign(searchTerms, this.query || {});
+    
     let query = datastore.createQuery(STRUCTURE_COLLECTION_KEY);
+    
+    if(searchTerms.limit) {
+        query = query.limit(Number.parseInt(searchTerms.limit));
+        delete searchTerms.limit;
+    }
+    
+    if(searchTerms.cursor) {
+        query = query.start(searchTerms.cursor);
+        delete searchTerms.cursor;
+    }
+    
     for(const condition in searchTerms) {
         query = query.filter(condition, '=', searchTerms[condition]);
     }
 
     const res = yield new Promise((resolve, reject) => {
-        datastore.runQuery(query, function(err, data) {
+        datastore.runQuery(query, function(err, data, info) {
             if(err) {
                 return reject(err);
             }
-            return resolve(data);
+            return resolve({
+                data, info
+            });
         });
     });
 
     let structures = [];
 
-    for(const entry of res) {
+    for(const entry of res.data) {
         const structure = entry.data;
         if(structure.hidden) {
             continue;
@@ -179,7 +193,10 @@ function* getAllStructures() {
     }
 
     this.status = 200;
-    this.body = structures;
+    this.body = {
+        structures,
+        info: res.info
+    };
 }
 
 function* getStructure() {
