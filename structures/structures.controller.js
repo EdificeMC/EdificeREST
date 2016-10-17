@@ -38,7 +38,8 @@ function* createStructure() {
     // Get some information from the schematic
     let structure = {
         schematic: `https://storage.googleapis.com/${STRUCTURE_BUCKET}/${fileName}`,
-        finalized: false
+        finalized: false,
+        hidden: false
     };
 
     const schematicDataBuffer = yield new Promise(function(resolve) {
@@ -150,7 +151,8 @@ function* editStructure() {
 
 function* getAllStructures() {
     let searchTerms = {
-        'finalized': true
+        'finalized': true,
+        'hidden': false
     };
     Object.assign(searchTerms, this.query || {});
     
@@ -185,9 +187,6 @@ function* getAllStructures() {
 
     for(const entry of res.data) {
         const structure = entry.data;
-        if(structure.hidden) {
-            continue;
-        }
         structure.id = entry.key.name;
         structures.push(structure);
     }
