@@ -63,16 +63,9 @@ function* createStructure() {
     /* eslint-enable quotes */
 
     // Save the structure record
-    yield new Promise((resolve, reject) => {
-        datastore.save({
-            key: datastore.key([STRUCTURE_COLLECTION_KEY, structureId]),
-            data: structure
-        }, function(err, res) {
-            if(err) {
-                return reject(err);
-            }
-            return resolve(res);
-        });
+    yield datastore.save({
+        key: datastore.key([STRUCTURE_COLLECTION_KEY, structureId]),
+        data: structure
     });
 
     structure.id = structureId;
@@ -83,70 +76,38 @@ function* createStructure() {
 
 function* editStructure() {
     helpers.validateInput(this.request.body, structureSchema.edit.input);
-    
+
     // the gcloud datastore takes only an int
     const structureId = this.params.id;
 
-    yield new Promise((resolve, reject) => {
-        const transaction = datastore.transaction();
-        transaction.run(err => {
-            if(err) {
-                return reject(err);
-            }
-            
-            transaction.get(datastore.key([STRUCTURE_COLLECTION_KEY, structureId]), (err, structure) => {
-                if (err) {
-                    return reject(err);
-                }
-                if(!structure) {
-                    return reject(Boom.notFound('Structure with ID ' + this.params.id + ' not found.'));
-                }
-                
-                let userValidationProm;
-                if(structure.data.finalized) {
-                    userValidationProm = helpers.validateUser(this.header.authorization).then(user => {
-                        if(user.app_metadata.mcuuid !== structure.data.creatorUUID && !user.app_metadata.roles.includes('admin')) {
-                            return reject(Boom.unauthorized());
-                        }
-                    });
-                } else {
-                    // The user doesn't need to be validated for the first edit/finalization
-                    // The user having the structure ID is enough identification
-                    structure.data.finalized = true;
-                    userValidationProm = Promise.resolve();
-                }
-                
-                userValidationProm.then(() => {
-                    _.merge(structure.data, this.request.body);
-                    structure.data.stargazers = [];
-                    transaction.save(structure);
-                    
-                    // Keep a reference around for including in the response
-                    this.structure = structure.data;
-                    
-                    transaction.commit(function(err) {
-                        if(err) {
-                            return reject(err);
-                        }
-                        return resolve();
-                    });
-                });
-                
-            });
-        }, function(transactionError) {
-            if (transactionError) {
-                return reject(transactionError);
-            }
-            return resolve();
-        });
-    }).catch(err => {
-        if(err.isBoom) {
-            throw err;
+    const transaction = datastore.transaction();
+    yield transaction.run();
+
+    let structure = yield transaction.get(datastore.key([STRUCTURE_COLLECTION_KEY, structureId]));
+
+    if(!structure) {
+        throw Boom.notFound('Structure with ID ' + this.params.id + ' not found.');
+    }
+
+    if(structure.data.finalized) {
+        let user = yield helpers.validateUser(this.header.authorization);
+        if(user.app_metadata.mcuuid !== structure.data.creatorUUID && !user.app_metadata.roles.includes('admin')) {
+            throw Boom.unauthorized();
         }
-    });
+    } else {
+        // The user doesn't need to be validated for the first edit/finalization
+        // The user having the structure ID is enough identification
+        structure.data.finalized = true;
+    }
+
+    _.merge(structure.data, this.request.body);
+    structure.data.stargazers = [];
+    transaction.save(structure);
+
+    yield transaction.commit();
 
     this.status = 200;
-    this.body = this.structure;
+    this.body = structure.data;
 }
 
 function* getAllStructures() {
@@ -155,65 +116,44 @@ function* getAllStructures() {
         'hidden': false
     };
     Object.assign(searchTerms, this.query || {});
-    
+
     let query = datastore.createQuery(STRUCTURE_COLLECTION_KEY);
-    
+
     if(searchTerms.limit) {
         query = query.limit(Number.parseInt(searchTerms.limit));
         delete searchTerms.limit;
     }
-    
+
     if(searchTerms.cursor) {
         query = query.start(searchTerms.cursor);
         delete searchTerms.cursor;
     }
-    
+
     for(const condition in searchTerms) {
         query = query.filter(condition, '=', searchTerms[condition]);
     }
 
-    const res = yield new Promise((resolve, reject) => {
-        datastore.runQuery(query, function(err, data, info) {
-            if(err) {
-                return reject(err);
-            }
-            return resolve({
-                data, info
-            });
-        });
-    });
+    let [structures, info] = yield datastore.runQuery(query);
 
-    let structures = [];
-
-    for(const entry of res.data) {
-        const structure = entry.data;
-        structure.id = entry.key.name;
-        structures.push(structure);
+    for(let structure of structures) {
+        structure.id = structure[datastore.KEY].name;
     }
 
     this.status = 200;
     this.body = {
         structures,
-        info: res.info
+        info
     };
 }
 
 function* getStructure() {
-    const res = yield new Promise((resolve, reject) => {
-        datastore.get(datastore.key([STRUCTURE_COLLECTION_KEY, this.params.id]), function(err, data) {
-            if(err) {
-                return reject(err);
-            }
-            return resolve(data);
-        });
-    });
+    let structure = (yield datastore.get(datastore.key([STRUCTURE_COLLECTION_KEY, this.params.id])))[0];
 
-    if(!res) {
+    if(!structure) {
         throw new Boom.notFound('Structure with ID ' + this.params.id + ' not found.');
     }
 
-    let structure = res.data;
-    structure.id = res.key.name;
+    structure.id = this.params.id;
 
     if(this.query.schematic) {
         const schematicUrl = structure.schematic;
@@ -236,7 +176,7 @@ function* getStructure() {
     }
 
     this.status = 200;
-    this.body = res.data;
+    this.body = structure;
 }
 
 function cleanupNBT(obj) {

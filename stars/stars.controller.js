@@ -28,47 +28,23 @@ function* starStructure() {
     const structureId = this.request.body.structureId;
 
     // Update the structure's stargazers
-    yield new Promise((resolve, reject) => {
-        const transaction = datastore.transaction();
-        transaction.run(err => {
-            if(err) {
-                return reject(err);
-            }
-            
-            transaction.get(datastore.key([STRUCTURE_COLLECTION_KEY, this.request.body.structureId]), (err, structure) => {
-                if (err) {
-                    return reject(err);
-                }
-                if(!structure) {
-                    return reject(new Boom.notFound('Structure with ID ' + this.request.body.structureId + ' not found.'));
-                }
+    const transaction = datastore.transaction();
+    yield transaction.run();
 
-                let playerIdIndex = structure.data.stargazers.indexOf(user.app_metadata.mcuuid);
-                if (playerIdIndex === -1) {
-                    structure.data.stargazers.push(user.app_metadata.mcuuid);
-                } else {
-                    structure.data.stargazers.splice(playerIdIndex, 1);
-                }
+    let structure = yield transaction.get(datastore.key([STRUCTURE_COLLECTION_KEY, this.request.body.structureId]));
+    if(!structure) {
+        throw new Boom.notFound('Structure with ID ' + this.request.body.structureId + ' not found.');
+    }
 
-                transaction.save(structure);
-                transaction.commit(function(err) {
-                    if(err) {
-                        return reject(err);
-                    }
-                    return resolve();
-                });
-            });
-        }, function(transactionError) {
-            if (transactionError) {
-                return reject(transactionError);
-            }
-            return resolve();
-        });
-    }).catch(err => {
-        if(err.isBoom) {
-            throw err;
-        }
-    });
+    let playerIdIndex = structure.data.stargazers.indexOf(user.app_metadata.mcuuid);
+    if (playerIdIndex === -1) {
+        structure.data.stargazers.push(user.app_metadata.mcuuid);
+    } else {
+        structure.data.stargazers.splice(playerIdIndex, 1);
+    }
+
+    transaction.save(structure);
+    yield transaction.commit();
 
     let stars = _.get(user, 'user_metadata.stars', []);
     let structureIdIndex = stars.indexOf(structureId);
