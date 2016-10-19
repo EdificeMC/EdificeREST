@@ -83,31 +83,35 @@ function* editStructure() {
     const transaction = datastore.transaction();
     yield transaction.run();
 
-    let structure = yield transaction.get(datastore.key([STRUCTURE_COLLECTION_KEY, structureId]));
-
+    const key = datastore.key([STRUCTURE_COLLECTION_KEY, structureId]);
+    let structure = (yield transaction.get(key))[0];
+    
     if(!structure) {
         throw Boom.notFound('Structure with ID ' + this.params.id + ' not found.');
     }
 
-    if(structure.data.finalized) {
+    if(structure.finalized) {
         let user = yield helpers.validateUser(this.header.authorization);
-        if(user.app_metadata.mcuuid !== structure.data.creatorUUID && !user.app_metadata.roles.includes('admin')) {
+        if(user.app_metadata.mcuuid !== structure.author && !user.app_metadata.roles.includes('admin')) {
             throw Boom.unauthorized();
         }
     } else {
         // The user doesn't need to be validated for the first edit/finalization
         // The user having the structure ID is enough identification
-        structure.data.finalized = true;
+        structure.finalized = true;
     }
 
-    _.merge(structure.data, this.request.body);
-    structure.data.stargazers = [];
-    transaction.save(structure);
+    _.merge(structure, this.request.body);
+    structure.stargazers = [];
+    transaction.save({
+        key,
+        data: structure
+    });
 
     yield transaction.commit();
 
     this.status = 200;
-    this.body = structure.data;
+    this.body = structure;
 }
 
 function* getAllStructures() {
