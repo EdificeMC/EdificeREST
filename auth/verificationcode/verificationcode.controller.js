@@ -6,7 +6,6 @@ const config = require('config');
 const helpers = require('../../helpers');
 const Boom = require('boom');
 const moment = require('moment');
-const _ = require('lodash');
 let datastore;
 
 const auth0rp = rp.defaults({
@@ -46,39 +45,25 @@ function* grantVerificationCode() {
 
     let minCreationMoment = moment();
     minCreationMoment.subtract(config.get('VERIFICATION_CODE_EXPIRY_HOURS'), 'hours');
-
-    const existingPlayerCodes = yield new Promise((resolve, reject) => {
-        datastore.createQuery('VerificationCode')
-            .filter('playerId', '=', this.request.body.playerId)
-            .filter('created', '>', minCreationMoment.toDate())
-            .limit(1)
-            .run(function(err, data) {
-                if(err) {
-                    return reject(err);
-                }
-                return resolve(data);
-            });
-    });
-
-    let code = _.get(existingPlayerCodes, '[0].data');
+    
+    const query = datastore.createQuery('VerificationCode')
+        .filter('playerId', '=', this.request.body.playerId)
+        .filter('created', '>', minCreationMoment.toDate())
+        .limit(1);
+        
+    let [existingPlayerCodes] = yield datastore.runQuery(query);
+    let code = existingPlayerCodes[0];
 
     while(!code) {
         let newCode = Math.random().toString(36).substring(2, 8); // 6 character long alphanumeric string
 
         const query = datastore.createQuery('VerificationCode')
             .filter('code', '=', newCode);
+            
+        const [conflictingCodes] = yield datastore.runQuery(query);
+        const conflictingCode = conflictingCodes[0];
 
-        const conflictingCodes = yield new Promise(function(resolve, reject) {
-            datastore.runQuery(query, function(err, data) {
-                if(err) {
-                    return reject(err);
-                }
-                return resolve(data);
-            });
-        });
-
-        const existingCode = _.get(conflictingCodes, '[0].data');
-        if(existingCode) {
+        if(conflictingCode) {
             // Give up after 10 tries, although this shouldn't ever happen
             if(iterations > 10) {
                 throw new Boom.badImplementation('Failed to generate a new verification code');
@@ -92,16 +77,9 @@ function* grantVerificationCode() {
             created: new Date()
         };
 
-        yield new Promise((resolve, reject) => {
-            datastore.save({
-                key: datastore.key('VerificationCode'),
-                data: code
-            }, function(err, res) {
-                if(err) {
-                    return reject(err);
-                }
-                return resolve(res);
-            });
+        yield datastore.save({
+            key: datastore.key('VerificationCode'),
+            data: code
         });
     }
 
