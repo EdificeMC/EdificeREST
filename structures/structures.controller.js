@@ -39,7 +39,8 @@ function* createStructure() {
     let structure = {
         schematic: `https://storage.googleapis.com/${STRUCTURE_BUCKET}/${fileName}`,
         finalized: false,
-        hidden: false
+        hidden: false,
+        created: new Date()
     };
 
     const schematicDataBuffer = yield new Promise(function(resolve) {
@@ -131,6 +132,19 @@ function* getAllStructures() {
     if(searchTerms.cursor) {
         query = query.start(searchTerms.cursor);
         delete searchTerms.cursor;
+    }
+    
+    if(searchTerms.sort) {
+        if(searchTerms.descending) {
+            query = query.order(searchTerms.sort, {
+                descending: true
+            });
+        } else {
+            query = query.order(searchTerms.sort);
+        }
+        
+        delete searchTerms.sort;
+        delete searchTerms.descending;
     }
 
     for(const condition in searchTerms) {

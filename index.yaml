@@ -3,3 +3,9 @@ indexes:
   properties:
   - name: playerId
   - name: created
+- kind: Structure
+  properties:
+    - name: finalized
+    - name: hidden
+    - name: created
+      direction: desc
