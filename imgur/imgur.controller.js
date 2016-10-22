@@ -4,8 +4,8 @@ const http = require('axios');
 const config = require('config');
 const Jimp = require('jimp');
 
-const FULL_WIDTH = 500;
-const FULL_HEIGHT = 500;
+const FULL_WIDTH = 1024;
+const FULL_HEIGHT = 768;
 const imgDataPrefix = 'data:image/png;base64,';
 
 exports.init = function(router) {
