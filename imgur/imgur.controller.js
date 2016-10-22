@@ -6,6 +6,8 @@ const Jimp = require('jimp');
 
 const FULL_WIDTH = 1024;
 const FULL_HEIGHT = 768;
+const PADDING_X = FULL_WIDTH / 8;
+const PADDING_Y = FULL_HEIGHT / 8;
 const imgDataPrefix = 'data:image/png;base64,';
 
 exports.init = function(router) {
@@ -21,9 +23,7 @@ function* uploadImageToImgur() {
     let width = image.bitmap.width;
     let height = image.bitmap.height;
     
-    if(width > FULL_WIDTH || height > FULL_HEIGHT) {
-        image.scaleToFit(FULL_WIDTH, FULL_HEIGHT);
-    }
+    image.scaleToFit(FULL_WIDTH - 2 * PADDING_X, FULL_HEIGHT - 2 * PADDING_Y);
     
     width = image.bitmap.width;
     height = image.bitmap.height;
