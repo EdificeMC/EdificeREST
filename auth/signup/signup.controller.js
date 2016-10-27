@@ -4,7 +4,7 @@ let Boom = require('boom');
 const helpers = require('../../helpers');
 let rp = require('request-promise');
 let config = require('config');
-const _ = require('lodash');
+const moment = require('moment');
 let signupSchema = require('./signup.schema');
 let datastore;
 
@@ -25,30 +25,24 @@ exports.init = function(router, app) {
 
 function* signup() {
     helpers.validateInput(this.request.body, signupSchema.input);
-
+    
     // Validate verification code
-    const existingCodes = yield new Promise((resolve, reject) => {
-        datastore.createQuery('VerificationCode')
-            .filter('code', '=', this.request.body.verificationCode)
-            .limit(1)
-            .run(function(err, data) {
-                if(err) {
-                    return reject(err);
-                }
-                return resolve(data);
-            });
-    });
+    const query = datastore.createQuery('VerificationCode')
+        .filter('code', '=', this.request.body.verificationCode)
+        .limit(1);
+    
+    const [existingCodes] = yield datastore.runQuery(query);
 
-    const verificationCode = _.get(existingCodes, '[0].data');
+    const verificationCode = existingCodes[0];
 
     if(!verificationCode) {
         throw Boom.badRequest('Invalid verification code.');
     }
-
-    if(verificationCode.isExpired()) {
+    
+    if(isVerificationCodeExpired(verificationCode)) {
         throw Boom.badRequest('Expired verification code.');
     }
-
+    
     let response = yield auth0rp({
         method: 'POST',
         uri: 'https://edifice.auth0.com/api/v2/users',
@@ -63,23 +57,23 @@ function* signup() {
             email_verified: false
         }
     });
-
+    
     if(response.statusCode !== 201) {
         throw Boom.create(response.statusCode, response.body.message);
     }
-
-    yield new Promise((resolve, reject) => {
-        datastore.runInTransaction((transaction, done) => {
-            transaction.delete(datastore.key(['VerificationCode', verificationCode.id]));
-            done();
-        }, function(transactionError) {
-            if (transactionError) {
-                return reject(transactionError);
-            }
-            return resolve();
-        });
-    });
-
+    
+    const transaction = datastore.transaction();
+    yield transaction.run();
+    
+    transaction.delete(datastore.key(['VerificationCode', verificationCode[datastore.KEY].id]));
+    
+    yield transaction.commit();
+    
     this.status = 201;
     this.body = response.body;
+}
+
+function isVerificationCodeExpired(code) {
+    const now = moment();
+    return moment(code.created).isBefore(now);
 }
