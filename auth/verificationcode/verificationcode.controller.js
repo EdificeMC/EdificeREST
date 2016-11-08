@@ -5,7 +5,7 @@ const rp = require('request-promise');
 const config = require('config');
 const helpers = require('../../helpers');
 const Boom = require('boom');
-const moment = require('moment');
+// const moment = require('moment');
 let datastore;
 
 const auth0rp = rp.defaults({
@@ -43,12 +43,12 @@ function* grantVerificationCode() {
     // Generate a new code if an existing one in the DS doesn't exist or is expired
     let iterations = 0;
 
-    let minCreationMoment = moment();
-    minCreationMoment.subtract(config.get('VERIFICATION_CODE_EXPIRY_HOURS'), 'hours');
+    // let minCreationMoment = moment();
+    // minCreationMoment.subtract(config.get('VERIFICATION_CODE_EXPIRY_HOURS'), 'hours');
     
     const query = datastore.createQuery('VerificationCode')
         .filter('playerId', '=', this.request.body.playerId)
-        .filter('created', '>', minCreationMoment.toDate())
+        // .filter('created', '>', minCreationMoment.toDate())
         .limit(1);
         
     let [existingPlayerCodes] = yield datastore.runQuery(query);

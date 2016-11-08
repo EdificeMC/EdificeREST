@@ -4,7 +4,7 @@ let Boom = require('boom');
 const helpers = require('../../helpers');
 let rp = require('request-promise');
 let config = require('config');
-const moment = require('moment');
+// const moment = require('moment');
 let signupSchema = require('./signup.schema');
 let datastore;
 
@@ -39,9 +39,9 @@ function* signup() {
         throw Boom.badRequest('Invalid verification code.');
     }
     
-    if(isVerificationCodeExpired(verificationCode)) {
-        throw Boom.badRequest('Expired verification code.');
-    }
+    // if(isVerificationCodeExpired(verificationCode)) {
+    //     throw Boom.badRequest('Expired verification code.');
+    // }
     
     let response = yield auth0rp({
         method: 'POST',
@@ -73,7 +73,7 @@ function* signup() {
     this.body = response.body;
 }
 
-function isVerificationCodeExpired(code) {
-    const now = moment();
-    return moment(code.created).isBefore(now);
-}
+// function isVerificationCodeExpired(code) {
+//     const now = moment();
+//     return moment(code.created).isBefore(now);
+// }
